@@ -3,15 +3,15 @@
 " @Website:     http://members.a1.net/t.link/
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     27-Dez-2004.
-" @Last Change: 08-Mär-2005.
-" @Revision:    0.3.265
+" @Last Change: 17-Mär-2005.
+" @Revision:    1.4.8
 
 " vimscript #1173
 
 if &cp || exists("loaded_tcomment")
     finish
 endif
-let loaded_tcomment = 3
+let loaded_tcomment = 104
 
 fun! <SID>DefVar(name, val)
     if !exists(a:name)
@@ -75,6 +75,7 @@ call TCommentDefineType('gtkrc',            '# %s'             )
 call TCommentDefineType('haskell',          '-- %s'            )
 call TCommentDefineType('html',             '<!-- %s -->'      )
 call TCommentDefineType('html_block',       g:tcommentBlockXML )
+call TCommentDefineType('io',               '// %s'            )
 call TCommentDefineType('javaScript',       '// %s'            )
 call TCommentDefineType('javaScript_block', g:tcommentBlockC   )
 call TCommentDefineType('java',             '/* %s */'         )
@@ -89,6 +90,7 @@ call TCommentDefineType('ocaml_block',      '(*%s*)\n   '      )
 call TCommentDefineType('pascal',           '(* %s *)'         )
 call TCommentDefineType('pascal_block',     '(*%s*)\n   '      )
 call TCommentDefineType('perl',             '# %s'             )
+call TCommentDefineType('perl_block',       '=cut%s=cut'       )
 call TCommentDefineType('php',              '// %s'            )
 call TCommentDefineType('php_block',        g:tcommentBlockC   )
 call TCommentDefineType('prolog',           '%% %s'            )
@@ -217,6 +219,8 @@ endif
 if !hasmapto(":TCommentAs")
     noremap <c-_>a :TCommentAs 
     inoremap <c-_>a <c-o>:TCommentAs 
+    noremap <c-_>s :TCommentAs <c-r>=&ft<cr>
+    inoremap <c-_>s <c-o>:TCommentAs <c-r>=&ft<cr>
 endif
 
 
@@ -454,9 +458,13 @@ fun! <SID>GuessFileType(beg, end, asBlock, ...)
 endf
 
 fun! <SID>GuessCurrentCommentString(asBlock)
-    " the commentstring is the default one, so we assume that it wasn't 
-    " explicitly set; we then try to reconstruct &cms from &comments
-    if &commentstring == "/*%s*/" && &comments != "s1:/*,mb:*,ex:*/,://,b:#,:%,:XCOMM,n:>,fb:-"
+    let valid_cms = &commentstring =~ "%s"
+    if &commentstring != "/*%s*/" && valid_cms
+        " The &commentstring appears to have been set and to be valid
+        return &commentstring
+    elseif &comments != "s1:/*,mb:*,ex:*/,://,b:#,:%,:XCOMM,n:>,fb:-"
+        " the commentstring is the default one, so we assume that it wasn't 
+        " explicitly set; we then try to reconstruct &cms from &comments
         exec <SID>ExtractCommentsPart("")
         if !a:asBlock && line != ""
             return line ." %s"
@@ -477,8 +485,14 @@ fun! <SID>GuessCurrentCommentString(asBlock)
         if line != ""
             return line ." %s"
         endif
+    elseif valid_cms
+        " Before &commentstring appeared not to be set. As we don't know 
+        " better we return it anyway if it is valid
+        return &commentstring
+    else
+        " &commentstring is invalid. So we return the identity string.
+        return "%s"
     endif
-    return &commentstring
 endf
 
 fun! <SID>ExtractCommentsPart(key)
@@ -545,7 +559,7 @@ single line comments
 - removed g:tcommentSetCMS
 - the default key bindings have slightly changed
 
-0.3
+1.3
 - slightly improved recognition of embedded syntax
 - if no commentstring is defined in whatever way, reconstruct one from 
 &comments
@@ -557,4 +571,9 @@ text, i.e., this command doesn't work on whole lines but on the text to the
 right of the cursor)
 - enable multimode for dsl, vim filetypes
 - added explicit support for some other file types I ran into
+
+1.4
+- Fixed problem when &commentstring was invalid (e.g. lua)
+- perl_block by Kyosuke Takayama.
+- <c-_>s mapped to :TCommentAs <c-r>=&ft<cr>
 

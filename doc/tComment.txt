@@ -34,6 +34,7 @@ Key bindings~
     <c-_><space> :: :TComment <QUERY COMMENT-BEGIN ?COMMENT-END>
     <c-_>b       :: :TCommentBlock
     <c-_>a       :: :TCommentAs <QUERY COMMENT TYPE>
+    <c-_>s       :: :TCommentAs <QUERY COMPLETION FOR CURRENT FILE TYPE>
 
                                                     *tComment-commands*
 Alternatively, you can type (? meaning "optional argument"):
