@@ -3,13 +3,15 @@
 " @Website:     http://members.a1.net/t.link/
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     27-Dez-2004.
-" @Last Change: 11-Jän-2005.
-" @Revision:    0.2.195
+" @Last Change: 08-Mär-2005.
+" @Revision:    0.3.265
+
+" vimscript #1173
 
 if &cp || exists("loaded_tcomment")
     finish
 endif
-let loaded_tcomment = 1
+let loaded_tcomment = 3
 
 fun! <SID>DefVar(name, val)
     if !exists(a:name)
@@ -24,8 +26,11 @@ call <SID>DefVar('g:tcommentBlankLines', 1)
 call <SID>DefVar('g:tcommentGuessFileType', 0)
 " In php documents, the php part is usually marked as phpRegion. We thus 
 " assume that the buffers default comment style isn't php but html
+call <SID>DefVar('g:tcommentGuessFileType_dsl', "xml")
 call <SID>DefVar('g:tcommentGuessFileType_php', "html")
 call <SID>DefVar('g:tcommentGuessFileType_html', 1)
+call <SID>DefVar('g:tcommentGuessFileType_tskeleton', 1)
+call <SID>DefVar('g:tcommentGuessFileType_vim',  1)
 
 " If you don't define these variables, TComment will use &commentstring 
 " instead. We override the default values here in order to have a blank after 
@@ -41,64 +46,122 @@ call <SID>DefVar('g:tcommentBlockC', "/*%s */\n * ")
 " call <SID>DefVar('g:tcommentBlockC2', "/**%s  */\n  * ")
 " call <SID>DefVar('g:tcommentBlockC', "/*%s */\n    ")
 
-call <SID>DefVar('g:tcomment_cpp',              '// %s'             )
-call <SID>DefVar('g:tcomment_cpp_block',        g:tcommentBlockC    )
-call <SID>DefVar('g:tcomment_css',              '/* %s */'          )
-call <SID>DefVar('g:tcomment_css_block',        g:tcommentBlockC    )
-call <SID>DefVar('g:tcomment_c',                '/* %s */'          )
-call <SID>DefVar('g:tcomment_c_block',          g:tcommentBlockC    )
-call <SID>DefVar('g:tcomment_html',             '<!-- %s -->'       )
-call <SID>DefVar('g:tcomment_html_block',       '<!--%s-->'         )
-call <SID>DefVar('g:tcomment_javaScript',       '// %s'             )
-call <SID>DefVar('g:tcomment_javaScript_block', g:tcommentBlockC    )
-call <SID>DefVar('g:tcomment_java',             '/* %s */'          )
-call <SID>DefVar('g:tcomment_java_block',       g:tcommentBlockC    )
-call <SID>DefVar('g:tcomment_lisp',             '; %s'              )
-call <SID>DefVar('g:tcomment_ocaml',            '(* %s *)'          )
-call <SID>DefVar('g:tcomment_ocaml_block',      '(*%s*)  '          )
-call <SID>DefVar('g:tcomment_perl',             '# %s'              )
-call <SID>DefVar('g:tcomment_php',              '// %s'             )
-call <SID>DefVar('g:tcomment_php_block',        g:tcommentBlockC    )
-call <SID>DefVar('g:tcomment_ruby',             '# %s'              )
-call <SID>DefVar('g:tcomment_ruby_block',       '=begin rdoc%s=end' )
-call <SID>DefVar('g:tcomment_r',                '# %s'              )
-call <SID>DefVar('g:tcomment_scheme',           '; %s'              )
-call <SID>DefVar('g:tcomment_sh',               '# %s'              )
-call <SID>DefVar('g:tcomment_tex',              '%% %s'             )
-call <SID>DefVar('g:tcomment_viki',             '%% %s'             )
-call <SID>DefVar('g:tcomment_vim',              '" %s'              )
+call <SID>DefVar('g:tcommentBlockXML', "<!--%s-->\n  ")
 
-" TComment(line1, line2, ?asBlock, ?commentBegin, ?commentEnd)
+" Currently this function just sets a variable
+fun! TCommentDefineType(name, commentstring)
+    call <SID>DefVar('g:tcomment_'. a:name, a:commentstring)
+endf
+
+call TCommentDefineType('ada',              '-- %s'            )
+call TCommentDefineType('apache',           '# %s'             )
+call TCommentDefineType('catalog',          '-- %s --'         )
+call TCommentDefineType('catalog_block',    '--%s--\n  '       )
+call TCommentDefineType('cpp',              '// %s'            )
+call TCommentDefineType('cpp_block',        g:tcommentBlockC   )
+call TCommentDefineType('css',              '/* %s */'         )
+call TCommentDefineType('css_block',        g:tcommentBlockC   )
+call TCommentDefineType('c',                '/* %s */'         )
+call TCommentDefineType('c_block',          g:tcommentBlockC   )
+call TCommentDefineType('conf',             '# %s'             )
+call TCommentDefineType('docbk',            '<!-- %s -->'      )
+call TCommentDefineType('docbk_block',      g:tcommentBlockXML )
+call TCommentDefineType('dosbatch',         'rem %s'           )
+call TCommentDefineType('dosini',           '; %s'             )
+call TCommentDefineType('dsl',              '; %s'             )
+call TCommentDefineType('dylan',            '// %s'            )
+call TCommentDefineType('eiffel',           '-- %s'            )
+call TCommentDefineType('gtkrc',            '# %s'             )
+call TCommentDefineType('haskell',          '-- %s'            )
+call TCommentDefineType('html',             '<!-- %s -->'      )
+call TCommentDefineType('html_block',       g:tcommentBlockXML )
+call TCommentDefineType('javaScript',       '// %s'            )
+call TCommentDefineType('javaScript_block', g:tcommentBlockC   )
+call TCommentDefineType('java',             '/* %s */'         )
+call TCommentDefineType('java_block',       g:tcommentBlockC   )
+call TCommentDefineType('lisp',             '; %s'             )
+call TCommentDefineType('m4',               'dnl %s'           )
+call TCommentDefineType('nroff',            '.\\" %s'          )
+call TCommentDefineType('objc',             '/* %s */'         )
+call TCommentDefineType('objc_block',       g:tcommentBlockC   )
+call TCommentDefineType('ocaml',            '(* %s *)'         )
+call TCommentDefineType('ocaml_block',      '(*%s*)\n   '      )
+call TCommentDefineType('pascal',           '(* %s *)'         )
+call TCommentDefineType('pascal_block',     '(*%s*)\n   '      )
+call TCommentDefineType('perl',             '# %s'             )
+call TCommentDefineType('php',              '// %s'            )
+call TCommentDefineType('php_block',        g:tcommentBlockC   )
+call TCommentDefineType('prolog',           '%% %s'            )
+call TCommentDefineType('ruby',             '# %s'             )
+call TCommentDefineType('ruby_block',       '=begin rdoc%s=end')
+call TCommentDefineType('r',                '# %s'             )
+call TCommentDefineType('scheme',           '; %s'             )
+call TCommentDefineType('sgml',             '<!-- %s -->'      )
+call TCommentDefineType('sgml_block',       g:tcommentBlockXML )
+call TCommentDefineType('sh',               '# %s'             )
+call TCommentDefineType('sql',              '-- %s'            )
+call TCommentDefineType('spec',             '# %s'             )
+call TCommentDefineType('sps',              '* %s.'            )
+call TCommentDefineType('tcl',              '# %s'             )
+call TCommentDefineType('tex',              '%% %s'            )
+call TCommentDefineType('tpl',              '<!-- %s -->'      )
+call TCommentDefineType('viki',             '%% %s'            )
+call TCommentDefineType('vim',              '" %s'             )
+call TCommentDefineType('websec',           '# %s'             )
+call TCommentDefineType('xml',              '<!-- %s -->'      )
+call TCommentDefineType('xml_block',        g:tcommentBlockXML )
+call TCommentDefineType('xslt',             '<!-- %s -->'      )
+call TCommentDefineType('xslt_block',       g:tcommentBlockXML )
+call TCommentDefineType('yaml',             '# %s'             )
+
+" TComment(line1, line2, ?commentMode, ?commentAnyway, ?commentBegin, ?commentEnd)
+" commentMode:
+"   0 ... guess
+"   1 ... block
+"   V ... "visual" block
 fun! TComment(beg, end, ...)
     " save the cursor position
     let co = col(".")
     let li = line(".")
-    let asBlock = (a:0 >= 1 && a:1 =~ '^[^0]')
+    let commentMode   = (a:0 >= 1 && a:1 =~ '^[^0]')
+    let commentAnyway = a:0 >= 2 ? (a:2 == '!') : 0
+    if commentMode && a:1 == "V"
+        let start = co
+    else
+        let start = 0
+    endif
     " get the correct commentstring
-    if a:0 >= 2 && a:2 != ""
-        let cms = a:2 ."%s"
-        if a:0 >= 3 && a:3 != ""
-            let cms = cms . a:3
+    if a:0 >= 3 && a:3 != ""
+        let cms = <SID>EncodeCommentPart(a:3) ."%s"
+        if a:0 >= 4 && a:4 != ""
+            let cms = cms . <SID>EncodeCommentPart(a:4)
         endif
     else
-        exec <SID>GetCommentString(a:beg, a:end, asBlock)
+        exec <SID>GetCommentString(a:beg, a:end, commentMode)
     endif
     let cms0       = <SID>BlockGetCommentString(cms)
-    " make whitespace optional
+    let cms0       = escape(cms0, '\')
+    " make whitespace optional; this conflicts with comments that require some 
+    " whitespace
     let cmtCheck   = substitute(cms0, '\([	 ]\)', '\1\\?', 'g')
     " turn commentstring into a search pattern
     let cmtCheck   = <SID>SPrintF(cmtCheck, '\(\_.\{-}\)')
-    " set mode and indentStr
-    exec <SID>CommentDef(a:beg, a:end, cmtCheck, asBlock)
+    " set commentMode and indentStr
+    exec <SID>CommentDef(a:beg, a:end, cmtCheck, commentMode, start)
+    if commentAnyway
+        let mode = 0
+    endif
     " go
-    if asBlock
+    if commentMode
+        " We want a comment block
         call <SID>CommentBlock(a:beg, a:end, mode, cmtCheck, cms, indentStr)
     else
+        " We want commented lines
         " final search pattern for uncommenting
-        let cmtCheck   = escape(cmtCheck, '"\/')
+        let cmtCheck   = escape('\V\^\(\s\{-}\)'. cmtCheck .'\$', '"/\')
         " final pattern for commenting
         let cmtReplace = escape(cms0, '"/')
-        silent exec a:beg .','. a:end .'s/^'. indentStr .'\zs\(.*\)$/'.
+        silent exec a:beg .','. a:end .'s/\V'. <SID>StartRx(start) . indentStr .'\zs\(\.\*\)\$/'.
                     \ '\=<SID>ProcessedLine('. mode .', submatch(0), "'. cmtCheck .'", "'. cmtReplace .'")/ge'
     endif
     " reposition cursor
@@ -106,13 +169,16 @@ fun! TComment(beg, end, ...)
 endf
 
 " :line1,line2 TComment ?commentBegin ?commentEnd
-command! -range -nargs=* TComment call TComment(<line1>, <line2>, 0, <f-args>)
+command! -bang -range -nargs=* TComment call TComment(<line1>, <line2>, 0, "<bang>", <f-args>)
+
+" :line1,line2 TComment ?commentBegin ?commentEnd
+command! -bang -range -nargs=* TCommentVisualBlock call TComment(<line1>, <line2>, "V", "<bang>", <f-args>)
 
 " :line1,line2 TCommentBlock ?commentBegin ?commentEnd
-command! -range -nargs=* TCommentBlock call TComment(<line1>, <line2>, 1, <f-args>)
+command! -bang -range -nargs=* TCommentBlock call TComment(<line1>, <line2>, 1, "<bang>", <f-args>)
 
 " comment text as if it were of a specific filetype
-fun! TCommentAs(beg, end, filetype)
+fun! TCommentAs(beg, end, commentAnyway, filetype)
     let asBlock = a:filetype =~ '_block'
     if asBlock
         let ft = substitute(a:filetype, '_block.*$', '', '')
@@ -120,30 +186,35 @@ fun! TCommentAs(beg, end, filetype)
         let ft = a:filetype
     endif
     exec <SID>GetCommentString(a:beg, a:end, asBlock, ft)
-    let pre  = substitute(cms, '%s.*$', '', '')
+    let pre  = substitute(cms, '%s.*$',    '', '')
+    let pre  = substitute(pre, '%%', '%', 'g')
     let post = substitute(cms, '^.\{-}%s', '', '')
-    call TComment(a:beg, a:end, asBlock, pre, post)
+    let post = substitute(post, '%%', '%', 'g')
+    call TComment(a:beg, a:end, asBlock, a:commentAnyway, pre, post)
 endf
 
 " :line1,line2 TCommentAs commenttype
-command! -complete=custom,TCommentFileTypes -range -nargs=1 TCommentAs 
-            \ call TCommentAs(<line1>, <line2>, <f-args>)
+command! -bang -complete=custom,TCommentFileTypes -range -nargs=1 TCommentAs 
+            \ call TCommentAs(<line1>, <line2>, "<bang>", <f-args>)
 
-if !hasmapto("TComment<cr>")
+if !hasmapto(":TComment<cr>")
     noremap <silent> <c-_> :TComment<cr>
     inoremap <silent> <c-_> <c-o>:TComment<cr>
     noremap <silent> <c-_><c-_> :TComment<cr>
     inoremap <silent> <c-_><c-_> <c-o>:TComment<cr>
 endif
-if !hasmapto("TComment ")
+if !hasmapto(":TComment ")
     noremap <c-_><space> :TComment 
     inoremap <c-_><space> <c-o>:TComment 
 endif
-if !hasmapto("TCommentBlock")
+if !hasmapto(":TCommentVisualBlock<cr>")
+    vnoremap <silent> <c-_>v :TCommentVisualBlock<cr>
+endif
+if !hasmapto(":TCommentBlock<cr>")
     noremap <c-_>b :TCommentBlock<cr>
     inoremap <c-_>b <c-o>:TCommentBlock<cr>
 endif
-if !hasmapto("TCommentAs")
+if !hasmapto(":TCommentAs")
     noremap <c-_>a :TCommentAs 
     inoremap <c-_>a <c-o>:TCommentAs 
 endif
@@ -213,7 +284,7 @@ fun! <SID>GetCommentString(beg, end, asBlock, ...)
             endif
             return <SID>GuessFileType(a:beg, a:end, a:asBlock, altFiletype)
         else
-            return <SID>GetCustomCommentString(&filetype, a:asBlock, &commentstring)
+            return <SID>GetCustomCommentString(&filetype, a:asBlock, <SID>GuessCurrentCommentString(a:asBlock))
         endif
     endif
     return <SID>RecordCMS(cms, asBlock)
@@ -254,21 +325,31 @@ fun! <SID>SPrintF(string, ...)
     endwh
 endf
 
-fun! <SID>GetIndentString(line)
-    return substitute(getline(a:line), '^\s*\zs.*$', '', '')
+fun! <SID>StartRx(start)
+    if a:start == 0
+        return '\^'
+    else
+        return '\%'. a:start .'c'
+    endif
 endf
 
-fun! <SID>CommentDef(beg, end, checkRx, asBlock)
-    let mdrx = '\V\^\s\*'. a:checkRx .'\s\*\$'
+fun! <SID>GetIndentString(line, start)
+    let start = a:start > 0 ? a:start - 1 : 0
+    return substitute(strpart(getline(a:line), start), '\V\^\s\*\zs\.\*\$', '', '')
+endf
+
+fun! <SID>CommentDef(beg, end, checkRx, asBlock, start)
+    let mdrx = '\V'. <SID>StartRx(a:start) .'\s\*'. a:checkRx .'\s\*\$'
     let mode = (getline(a:beg) =~ mdrx)
-    let it = <SID>GetIndentString(a:beg)
+    " echom "DBG ". a:checkRx .": ". mode ." ". mdrx
+    let it = <SID>GetIndentString(a:beg, a:start)
     let il = indent(a:beg)
     let n  = a:beg + 1
     while n <= a:end
         if getline(n) =~ '\S'
             let jl = indent(n)
             if jl < il
-                let it = <SID>GetIndentString(n)
+                let it = <SID>GetIndentString(n, a:start)
                 let il = jl
             endif
             if !a:asBlock
@@ -297,7 +378,7 @@ fun! <SID>ProcessedLine(mode, match, checkRx, replace)
     endif
     if a:mode
         " uncomment
-        let rv = substitute(a:match, '\V\^\(\s\{-}\)'. a:checkRx .'\$', '\1\2', '')
+        let rv = substitute(a:match, a:checkRx, '\1\2', '')
     else
         " comment
         let rv = <SID>SPrintF(a:replace, a:match)
@@ -345,22 +426,72 @@ fun! <SID>GuessFileType(beg, end, asBlock, ...)
     if a:0 >= 1 && a:1 != ""
         exec <SID>GetCustomCommentString(a:1, a:asBlock)
         if cms == ""
-            let cms = &commentstring
+            let cms = <SID>GuessCurrentCommentString(a:asBlock)
         endif
     else
-        let cms = &commentstring
         let asBlock = 0
+        let cms = <SID>GuessCurrentCommentString(0)
     endif
     let n  = a:beg
     while n <= a:end
-        let syntaxName = synIDattr(synID(n, indent(n) + 1, 1), "name")
-        if syntaxName =~ g:tcommentFileTypesRx
-            let ft = substitute(syntaxName, g:tcommentFileTypesRx, '\1', '')
-            return <SID>GetCustomCommentString(ft, a:asBlock, cms)
-        endif
+        let m  = indent(n) + 1
+        let le = virtcol("$")
+        while m < le
+            let syntaxName = synIDattr(synID(n, m, 1), "name")
+            if syntaxName =~ g:tcommentFileTypesRx
+                let ft = substitute(syntaxName, g:tcommentFileTypesRx, '\1', '')
+                return <SID>GetCustomCommentString(ft, a:asBlock, cms)
+            endif
+            if syntaxName == "" || syntaxName =~ '^\u\+$' || syntaxName =~ '^\u\U*$'
+                let m = m + 1
+            else
+                break
+            endif
+        endwh
         let n = n + 1
     endwh
     return <SID>RecordCMS(cms, asBlock)
+endf
+
+fun! <SID>GuessCurrentCommentString(asBlock)
+    " the commentstring is the default one, so we assume that it wasn't 
+    " explicitly set; we then try to reconstruct &cms from &comments
+    if &commentstring == "/*%s*/" && &comments != "s1:/*,mb:*,ex:*/,://,b:#,:%,:XCOMM,n:>,fb:-"
+        exec <SID>ExtractCommentsPart("")
+        if !a:asBlock && line != ""
+            return line ." %s"
+        endif
+        exec <SID>ExtractCommentsPart("s")
+        if s != ""
+            exec <SID>ExtractCommentsPart("e")
+            " if a:asBlock
+            "     exec <SID>ExtractCommentsPart("m")
+            "     if m != ""
+            "         let m = "\n". m
+            "     endif
+            "     return s.'%s'.e.m
+            " else
+                return s.' %s '.e
+            " endif
+        endif
+        if line != ""
+            return line ." %s"
+        endif
+    endif
+    return &commentstring
+endf
+
+fun! <SID>ExtractCommentsPart(key)
+    " let key   = a:key != "" ? a:key .'[^:]*' : ""
+    let key = a:key . '[bnflrO0-9-]*'
+    let val = substitute(&comments, '^\(.\{-},\)\{-}'. key .':\([^,]\+\).*$', '\2', '')
+    if val == &comments
+        let val = ""
+    else
+        let val = substitute(val, '%', '%%', 'g')
+    endif
+    let var = a:key == "" ? "line" : a:key
+    return 'let '. var .'="'. escape(val, '"') .'"'
 endf
 
 " <SID>GetCustomCommentString(ft, asBlock, ?default="")
@@ -397,14 +528,33 @@ fun! <SID>BlockGetMiddleString(cms)
 endf
 
 finish
+
+
 -----------------------------------------------------------------------
 History
+
 0.1
 - Initial release
+
 0.2
 - Fixed uncommenting of non-aligned comments
-- removed g:tcommentSetCMS
+- improved support for block comments (with middle lines and indentation)
 - using TCommentBlock for file types that don't have block comments creates 
 single line comments
 - removed the TCommentAsBlock command (TCommentAs provides its functionality)
-- improved support for block comments (with middle lines and indentation)
+- removed g:tcommentSetCMS
+- the default key bindings have slightly changed
+
+0.3
+- slightly improved recognition of embedded syntax
+- if no commentstring is defined in whatever way, reconstruct one from 
+&comments
+- The TComment... commands now have bang variants that don't act as toggles 
+but always comment out the selected text
+- fixed problem with commentstrings containing backslashes
+- comment as visual block (allows commenting text to the right of the main 
+text, i.e., this command doesn't work on whole lines but on the text to the 
+right of the cursor)
+- enable multimode for dsl, vim filetypes
+- added explicit support for some other file types I ran into
+

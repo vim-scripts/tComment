@@ -1,9 +1,11 @@
-*tComment.txt*  tComment -- yet another file type sensible commentify for vim
+*tComment.txt*  tComment -- One comment plugin to rule them all
 
 Author: Thomas Link, samul AT web.de
 
 tComment provides easy to use, file type sensible comments for Vim. It 
 can handle embedded syntax.
+
+Some aspects were originally inspired by vimscript #982.
 
 
                                                     *tComment-Installation*
@@ -24,7 +26,7 @@ The command TComment is bound to <c-_> by default. TComment works like a
 toggle, i.e., it will comment out text that contains uncommented lines, 
 and it will remove comment markup for already commented text.
 
-                                                    *tComment-Usage*
+                                                    *tComment-Key-Bindings*
 Key bindings~
     <c-_>        :: :TComment
     <c-_><c-_>   :: :TComment (use this binding to comment text without 
@@ -38,20 +40,44 @@ Alternatively, you can type (? meaning "optional argument"):
 
                                                     *:TComment*
     :?<range> TComment ?commentBegin ?commentEnd
+    :?<range> TComment! ?commentBegin ?commentEnd
 
                                                     *:TCommentBlock*
     :?<range> TCommentBlock ?commentBegin ?commentEnd
+    :?<range> TCommentBlock! ?commentBegin ?commentEnd
     NOTE: This command is kind of crude. It doesn't indent or reformat 
     the text.
 
                                                     *:TCommentAs*
     :?<range> TCommentAs filetype
+    :?<range> TCommentAs! filetype
     NOTE: TCommentAs requires g:tcomment_{filetype} to be defined.
+
+    The bang (!) variants always comment out the selected text and don't 
+    work as toggles.
+
+    Using this command you can also use different comment styles by 
+    defining g:tcomment_{filetype}_{style}. E.g. block comments are 
+    defined by the commentstring in g:tcomment_{filetype}_block. If you 
+    want to define, e.g., a fancy block comment style for html you could 
+    do something like: >
+
+        let g:tcomment_html_fancy_block = "<!--%s  -->\n  -- "
+
+<   In order to update the list of known comment types without 
+    restarting, you also have to: >
+
+        call TCommentCollectFileTypes()
+
+<   This comment style could then be accessed via (this command has 
+    command line completion): >
+
+        '<,'>TCommentAs html_fancy_block
 
 
 Goals~
 - Maintain indentation of selected text; the comment markers are left 
-  aligned but the text on the right (i.e., the comment) are indented 
+  aligned but the text on the right (i.e., the comment) is indented 
   like the original text
 
 - Handle embedded syntax like php+html or html+javaScript+css; you 
@@ -70,8 +96,8 @@ Goals~
   buffer local &commentstring option (which can be set on a vim 
   |modeline|)
 
-- Use 'commentstring' as a fallback (i.e., if a filetype is properly 
-  defined, TComment will automatically support it)
+- Use 'commentstring' or 'comments' as a fallback (i.e., if a filetype 
+  is properly defined, TComment will automatically support it)
 
 - Same short-cut for commenting text and for removing comment markup
 
@@ -80,6 +106,16 @@ Goals~
   code that should be commented aren't uncommented as it is the case 
   with some other plugins
 
+As of version 0.3, the following file types are explicitly defined:
+ada,           apache,        catalog,       cpp,           css,           
+c,             docbk,         dosbatch,      dosini,        dsl,           
+dylan,         eiffel,        gtkrc,         haskell,       html,          
+javaScript,    java,          lisp,          m4,            nroff,         
+objc,          ocaml,         pascal,        perl,          php,           
+prolog,        ruby,          r,             scheme,        sgml,          
+sh,            sql,           spec,          sps,           tcl,           
+tex,           tpl,           viki,          vim,           websec,        
+xml,           xslt,          yaml,          
 
 
 Credits~
