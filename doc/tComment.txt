@@ -1,0 +1,83 @@
+*tComment.txt*  tComment -- yet another file type sensible commentify for vim
+
+Author: Thomas Link, samul AT web.de
+
+tComment provides easy to use, file type sensible comments for Vim. It 
+can handle embedded syntax.
+
+
+                                                    *tComment-Installation*
+Installation~
+Copy the file tComment.vim to your plugin directory (~/.vim/plugins/ or 
+similar). See |standard-plugin| for further details.
+
+                                                    *tComment-uninstall*
+In case you have some bash or similar, you can feed the file 
+etc/tComment.lst to rm: >
+    
+    cd $HOME/.vim/
+    rm -i `cat etc/tComment.lst`
+
+                                                    *tComment-Usage*
+Usage~
+The command TComment is bound to <c-_> by default. TComment works like a 
+toggle, i.e., it will comment out text that contains uncommented lines, 
+and it will remove comment markup for already commented text.
+
+Alternatively, you can type (? meaning "optional argument"):
+
+                                                    *:TComment*
+    :?<range> TComment ?commentBegin ?commentEnd
+
+                                                    *:TCommentBlock*
+    :?<range> TCommentBlock ?commentBegin ?commentEnd
+    NOTE: This command is kind of crude. It doesn't indent or reformat 
+    the text.
+
+                                                    *:TCommentAs*
+    :?<range> TCommentAs filetype
+    NOTE: TCommentAs requires g:tcomment_{filetype} to be defined.
+
+
+Advantages of this plugin over similar efforts~
+- Maintains indentation of selected text; the comment markers are left 
+  aligned but the text on the right (i.e., the comment) are indented 
+  like the original text
+
+- Can handle embedded syntax like php+html or html+javaScript+css; you 
+  have to set g:tcommentGuessFileType_{&filetype} to 1 or to the 
+  fallback file type in order to activate this feature for other file 
+  types than php or html
+  
+  tComment deduces the correct file type from the syntax name, similar 
+  to the way EnhancedCommentify.vim does it. In opposition to 
+  EnhancedCommentify.vim, it matches the syntax name against a list the 
+  known file types, so that it can deal with, e.g., embedded javaScript
+
+- Easy to customize/adapt for an yet unknown syntax by setting buffer 
+  local variables (b:commentStart, b:commentEnd, or b:commentstring), 
+  global variables (g:tcomment_{&ft} and g:tcommentBlock_{&ft}), or the 
+  buffer local &commentstring option (which can be set in a vim 
+  |modeline|)
+
+- Uses 'commentstring' as a fallback (i.e., if a filetype is properly 
+  defined, TComment will automatically support it)
+
+- Same short-cut for commenting text and for removing comment markup
+
+- The decision whether text should be commented or uncommented is made 
+  on the basis of the whole selection (not line by line); comments in 
+  code that should be commented aren't uncommented as it is the case 
+  with some other plugins
+
+
+Disadvantages of this plugin~
+- Does only know one comment style (if you need more, you might want to 
+  try EnhancedCommentify.vim instead)
+
+
+Credits~
+The way we check for embedded syntax was adapted from/inspired by Meikel 
+Brandmeyer's EnhancedCommentify.vim (vimscript #23).
+
+
