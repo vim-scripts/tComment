@@ -24,6 +24,16 @@ The command TComment is bound to <c-_> by default. TComment works like a
 toggle, i.e., it will comment out text that contains uncommented lines, 
 and it will remove comment markup for already commented text.
 
+                                                    *tComment-Usage*
+Key bindings~
+    <c-_>        :: :TComment
+    <c-_><c-_>   :: :TComment (use this binding to comment text without 
+                    the timeout of the above one)
+    <c-_><space> :: :TComment <QUERY COMMENT-BEGIN ?COMMENT-END>
+    <c-_>b       :: :TCommentBlock
+    <c-_>a       :: :TCommentAs <QUERY COMMENT TYPE>
+
+                                                    *tComment-commands*
 Alternatively, you can type (? meaning "optional argument"):
 
                                                     *:TComment*
@@ -39,12 +49,12 @@ Alternatively, you can type (? meaning "optional argument"):
     NOTE: TCommentAs requires g:tcomment_{filetype} to be defined.
 
 
-Advantages of this plugin over similar efforts~
-- Maintains indentation of selected text; the comment markers are left 
+Goals~
+- Maintain indentation of selected text; the comment markers are left 
   aligned but the text on the right (i.e., the comment) are indented 
   like the original text
 
-- Can handle embedded syntax like php+html or html+javaScript+css; you 
+- Handle embedded syntax like php+html or html+javaScript+css; you 
   have to set g:tcommentGuessFileType_{&filetype} to 1 or to the 
   fallback file type in order to activate this feature for other file 
   types than php or html
@@ -56,11 +66,11 @@ Advantages of this plugin over similar efforts~
 
 - Easy to customize/adapt for an yet unknown syntax by setting buffer 
   local variables (b:commentStart, b:commentEnd, or b:commentstring), 
-  global variables (g:tcomment_{&ft} and g:tcommentBlock_{&ft}), or the 
-  buffer local &commentstring option (which can be set in a vim 
+  global variables (g:tcomment_{&ft} and g:tcomment_{&ft}_block), or the 
+  buffer local &commentstring option (which can be set on a vim 
   |modeline|)
 
-- Uses 'commentstring' as a fallback (i.e., if a filetype is properly 
+- Use 'commentstring' as a fallback (i.e., if a filetype is properly 
   defined, TComment will automatically support it)
 
 - Same short-cut for commenting text and for removing comment markup
@@ -71,13 +81,10 @@ Advantages of this plugin over similar efforts~
   with some other plugins
 
 
-Disadvantages of this plugin~
-- Does only know one comment style (if you need more, you might want to 
-  try EnhancedCommentify.vim instead)
-
 
 Credits~
 The way we check for embedded syntax was adapted from/inspired by Meikel 
 Brandmeyer's EnhancedCommentify.vim (vimscript #23).
 
 
+vim: tw=72
