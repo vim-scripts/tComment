@@ -5,8 +5,6 @@ Author: Thomas Link, samul AT web.de
 tComment provides easy to use, file type sensible comments for Vim. It 
 can handle embedded syntax.
 
-Some aspects were originally inspired by vimscript #982.
-
 
                                                     *tComment-Installation*
 Installation~
@@ -22,19 +20,20 @@ etc/tComment.lst to rm: >
 
                                                     *tComment-Usage*
 Usage~
-The command TComment is bound to <c-_> by default. TComment works like a 
-toggle, i.e., it will comment out text that contains uncommented lines, 
-and it will remove comment markup for already commented text.
+The command TComment is bound to <c-_><c-_> by default. TComment works 
+like a toggle, i.e., it will comment out text that contains uncommented 
+lines, and it will remove comment markup for already commented text 
+(i.e. text that contains no uncommented lines).
 
                                                     *tComment-Key-Bindings*
 Key bindings~
-    <c-_>        :: :TComment
-    <c-_><c-_>   :: :TComment (use this binding to comment text without 
-                    the timeout of the above one)
+    <c-_><c-_>   :: :TComment
     <c-_><space> :: :TComment <QUERY COMMENT-BEGIN ?COMMENT-END>
     <c-_>b       :: :TCommentBlock
     <c-_>a       :: :TCommentAs <QUERY COMMENT TYPE>
-    <c-_>s       :: :TCommentAs <QUERY COMPLETION FOR CURRENT FILE TYPE>
+    <c-_>s       :: :TCommentAs &filetype_<QUERY COMMENT SUBTYPE>
+    <c-_>i       :: :TCommentInline
+    <c-_>r       :: :TCommentRight
 
                                                     *tComment-commands*
 Alternatively, you can type (? meaning "optional argument"):
@@ -42,10 +41,20 @@ Alternatively, you can type (? meaning "optional argument"):
                                                     *:TComment*
     :?<range> TComment ?commentBegin ?commentEnd
     :?<range> TComment! ?commentBegin ?commentEnd
+    NOTE: If there is a visual selection that begins and ends in the same 
+    line, then TCommentInline is used instead.
+
+    NOTE: The range is optional and defaults to the current line.
+
+                                                    *:TCommentInline*
+    :?<range> TCommentInline ?commentBegin ?commentEnd
+    :?<range> TCommentInline! ?commentBegin ?commentEnd
+    Use the {&ft}_inline comment style.
 
                                                     *:TCommentBlock*
     :?<range> TCommentBlock ?commentBegin ?commentEnd
     :?<range> TCommentBlock! ?commentBegin ?commentEnd
+    Comment as "block", e.g. use the {&ft}_block comment style.
     NOTE: This command is kind of crude. It doesn't indent or reformat 
     the text.
 
@@ -53,27 +62,44 @@ Alternatively, you can type (? meaning "optional argument"):
     :?<range> TCommentAs filetype
     :?<range> TCommentAs! filetype
     NOTE: TCommentAs requires g:tcomment_{filetype} to be defined.
+    NOTE: This command supports command line completion. See 'wildmode' 
+    and 'wildmenu' for how to get the most out of it.
+
+                                                    *:TCommentRight*
+    :?<range> TCommentRight
+    :?<range> TCommentRight!
+    NOTE: This command comments out the text to the right of the cursor. 
+    If a visual selection was made (be it block-wise or not), all lines 
+    are commented out at from the current cursor positon downwards.
 
     The bang (!) variants always comment out the selected text and don't 
     work as toggles.
 
-    Using this command you can also use different comment styles by 
-    defining g:tcomment_{filetype}_{style}. E.g. block comments are 
-    defined by the commentstring in g:tcomment_{filetype}_block. If you 
-    want to define, e.g., a fancy block comment style for html you could 
-    do something like: >
+                                                    *TCommentDefineType()*
+    Using this command you can also use different comment styles with 
+    the TCommentDefineType(name, commentstring) function. This function 
+    takes two arguments:
+        name :: The name is either &filetype or {&filetype}_{style}. 
+            I.e., For block comments the {&filetype}_block and for 
+            inline comments the {&filetype}_inline styles are used.
+        comment string :: a string mostly as described in 
+            'commentstring'.
+    
+    If you want to define, e.g., a fancy block comment style for html 
+    you could do something like: >
 
-        let g:tcomment_html_fancy_block = "<!--%s  -->\n  -- "
+        call TCommentDefineType("html_fancy_block", "<!--%s  -->\n  -- ")
 
-<   In order to update the list of known comment types without 
-    restarting, you also have to: >
+<   The part after the newline character is used for marking "middle" 
+    lines.
 
-        call TCommentCollectFileTypes()
-
-<   This comment style could then be accessed via (this command has 
+    This comment style could then be accessed via (this command has 
     command line completion): >
 
         '<,'>TCommentAs html_fancy_block
+
+<   If you're editing a html file, this could best be done by the <c-_>s     
+    key map.
 
 
 Goals~
@@ -107,17 +133,15 @@ Goals~
   code that should be commented aren't uncommented as it is the case 
   with some other plugins
 
-As of version 0.3, the following file types are explicitly defined:
-ada,           apache,        catalog,       cpp,           css,           
-c,             docbk,         dosbatch,      dosini,        dsl,           
-dylan,         eiffel,        gtkrc,         haskell,       html,          
-javaScript,    java,          lisp,          m4,            nroff,         
-objc,          ocaml,         pascal,        perl,          php,           
-prolog,        ruby,          r,             scheme,        sgml,          
-sh,            sql,           spec,          sps,           tcl,           
-tex,           tpl,           viki,          vim,           websec,        
-xml,           xslt,          yaml,          
+As of version 1.5, the following file types are explicitly defined 
+(other filetypes are most likely supported through the 'commentstring' 
+or 'comments' variables):
 
+    ada, apache, autoit, catalog, cpp, css, c, cfg, conf, desktop, 
+    docbk, dosbatch, dosini, dsl, dylan, eiffel, gtkrc, haskell, html, 
+    io, javaScript, java, lisp, m4, nroff, objc, ocaml, pascal, perl, 
+    php, prolog, ruby, r, scheme, sgml, sh, sql, spec, sps, tcl, tex, 
+    tpl, viki, vim, websec, xml, xslt, yaml
 
 Credits~
 The way we check for embedded syntax was adapted from/inspired by Meikel 
