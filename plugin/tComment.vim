@@ -1,18 +1,18 @@
-" tComment.vim
+" tComment.vim -- An easily extensible & universal comment plugin 
 " @Author:      Thomas Link (samul AT web.de)
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     27-Dez-2004.
-" @Last Change: 28-Feb-2006.
-" @Revision:    1.5.256
+" @Last Change: 2007-04-15.
+" @Revision:    1.6.285
 " 
 " vimscript #1173
 
 if &cp || exists('loaded_tcomment')
     finish
 endif
-let loaded_tcomment = 105
+let loaded_tcomment = 106
 
-fun! <SID>DefVar(name, val)
+fun! s:DefVar(name, val)
     if !exists(a:name)
         " exec "let ". a:name ."='". a:val ."'"
         exec 'let '. a:name .'="'. escape(a:val, '"\') .'"'
@@ -20,17 +20,22 @@ fun! <SID>DefVar(name, val)
 endf
 
 " If true, comment blank lines too
-call <SID>DefVar('g:tcommentBlankLines', 1)
+call s:DefVar('g:tcommentBlankLines', 1)
+
+call s:DefVar('g:tcommentMapLeader1', '<c-_>')
+call s:DefVar('g:tcommentMapLeader2', '<Leader>_')
 
 " Guess the file type based on syntax names always or for some fileformat only
-call <SID>DefVar('g:tcommentGuessFileType', 0)
+call s:DefVar('g:tcommentGuessFileType', 0)
 " In php documents, the php part is usually marked as phpRegion. We thus 
 " assume that the buffers default comment style isn't php but html
-call <SID>DefVar('g:tcommentGuessFileType_dsl', 'xml')
-call <SID>DefVar('g:tcommentGuessFileType_php', 'html')
-call <SID>DefVar('g:tcommentGuessFileType_html', 1)
-call <SID>DefVar('g:tcommentGuessFileType_tskeleton', 1)
-call <SID>DefVar('g:tcommentGuessFileType_vim',  1)
+call s:DefVar('g:tcommentGuessFileType_dsl', 'xml')
+call s:DefVar('g:tcommentGuessFileType_php', 'html')
+call s:DefVar('g:tcommentGuessFileType_html', 1)
+call s:DefVar('g:tcommentGuessFileType_tskeleton', 1)
+call s:DefVar('g:tcommentGuessFileType_vim',  1)
+
+call s:DefVar('g:tcommentIgnoreTypes_php', 'sql')
 
 " If you don't define these variables, TComment will use &commentstring 
 " instead. We override the default values here in order to have a blank after 
@@ -42,17 +47,17 @@ call <SID>DefVar('g:tcommentGuessFileType_vim',  1)
 
 " I personally find this style rather irritating but here is an alternative 
 " definition that does this left-handed bar thing
-call <SID>DefVar('g:tcommentBlockC', "/*%s */\n * ")
-call <SID>DefVar('g:tcommentBlockC2', "/**%s */\n * ")
-" call <SID>DefVar('g:tcommentBlockC', "/*%s */\n    ")
-call <SID>DefVar('g:tcommentInlineC', "/* %s */")
+call s:DefVar('g:tcommentBlockC', "/*%s */\n * ")
+call s:DefVar('g:tcommentBlockC2', "/**%s */\n * ")
+" call s:DefVar('g:tcommentBlockC', "/*%s */\n    ")
+call s:DefVar('g:tcommentInlineC', "/* %s */")
 
-call <SID>DefVar('g:tcommentBlockXML', "<!--%s-->\n  ")
-call <SID>DefVar('g:tcommentInlineXML', "<!-- %s -->")
+call s:DefVar('g:tcommentBlockXML', "<!--%s-->\n  ")
+call s:DefVar('g:tcommentInlineXML', "<!-- %s -->")
 
 " Currently this function just sets a variable
 fun! TCommentDefineType(name, commentstring)
-    call <SID>DefVar('g:tcomment_'. a:name, a:commentstring)
+    call s:DefVar('g:tcomment_'. a:name, a:commentstring)
     let s:tcommentFileTypesDirty = 1
 endf
 
@@ -121,12 +126,13 @@ call TCommentDefineType('php',              '// %s'            )
 call TCommentDefineType('php_inline',       g:tcommentInlineC  )
 call TCommentDefineType('php_block',        g:tcommentBlockC   )
 call TCommentDefineType('php_2_block',      g:tcommentBlockC2  )
-call TCommentDefineType('po',               '# %s'            )
+call TCommentDefineType('po',               '# %s'             )
 call TCommentDefineType('prolog',           '%% %s'            )
 call TCommentDefineType('readline',         '# %s'             )
 call TCommentDefineType('ruby',             '# %s'             )
+call TCommentDefineType('ruby_3',           '### %s'           )
 call TCommentDefineType('ruby_block',       '=begin rdoc%s=end')
-call TCommentDefineType('ruby_nordoc_block', '=begin%s=end'    )
+call TCommentDefineType('ruby_nodoc_block', '=begin%s=end'     )
 call TCommentDefineType('r',                '# %s'             )
 call TCommentDefineType('sbs',              "' %s"             )
 call TCommentDefineType('scheme',           '; %s'             )
@@ -142,6 +148,7 @@ call TCommentDefineType('tcl',              '# %s'             )
 call TCommentDefineType('tex',              '%% %s'            )
 call TCommentDefineType('tpl',              '<!-- %s -->'      )
 call TCommentDefineType('viki',             '%% %s'            )
+call TCommentDefineType('viki_3',           '%%%%%% %s'        )
 call TCommentDefineType('viki_inline',      '{cmt: %s}'        )
 call TCommentDefineType('vim',              '" %s'             )
 call TCommentDefineType('websec',           '# %s'             )
@@ -155,7 +162,7 @@ call TCommentDefineType('yaml',             '# %s'             )
 
 let s:tcommentFileTypesDirty = 1
 
-fun! <SID>DefaultValue(option)
+fun! s:DefaultValue(option)
     exec 'let '. a:option .' = &'. a:option
     exec 'set '. a:option .'&'
     exec 'let default = &'. a:option
@@ -163,8 +170,8 @@ fun! <SID>DefaultValue(option)
     return default
 endf
 
-let s:defaultComments      = <SID>DefaultValue('comments')
-let s:defaultCommentString = <SID>DefaultValue('commentstring')
+let s:defaultComments      = s:DefaultValue('comments')
+let s:defaultCommentString = s:DefaultValue('commentstring')
 let s:nullCommentString    = '%s'
 
 " TComment(line1, line2, ?commentMode, ?commentAnyway, ?commentBegin, ?commentEnd)
@@ -175,8 +182,8 @@ let s:nullCommentString    = '%s'
 "   R ... right
 fun! TComment(beg, end, ...)
     " save the cursor position
-    let co = col(".")
-    let li = line(".")
+    let co = col('.')
+    let li = line('.')
     let commentMode   = a:0 >= 1 ? a:1 : 'G'
     let commentAnyway = a:0 >= 2 ? (a:2 == '!') : 0
     if commentMode ==# 'IG'
@@ -199,29 +206,29 @@ fun! TComment(beg, end, ...)
     endif
     " get the correct commentstring
     if a:0 >= 3 && a:3 != ''
-        let cms = <SID>EncodeCommentPart(a:3) .'%s'
+        let cms = s:EncodeCommentPart(a:3) .'%s'
         if a:0 >= 4 && a:4 != ''
-            let cms = cms . <SID>EncodeCommentPart(a:4)
+            let cms = cms . s:EncodeCommentPart(a:4)
         endif
     else
-        exec <SID>GetCommentString(a:beg, a:end, commentMode)
+        exec s:GetCommentString(a:beg, a:end, commentMode)
     endif
-    let cms0 = <SID>BlockGetCommentString(cms)
+    let cms0 = s:BlockGetCommentString(cms)
     let cms0 = escape(cms0, '\')
     " make whitespace optional; this conflicts with comments that require some 
     " whitespace
     let cmtCheck = substitute(cms0, '\([	 ]\)', '\1\\?', 'g')
     " turn commentstring into a search pattern
-    let cmtCheck = <SID>SPrintF(cmtCheck, '\(\_.\{-}\)')
+    let cmtCheck = s:SPrintF(cmtCheck, '\(\_.\{-}\)')
     " set commentMode and indentStr
-    exec <SID>CommentDef(a:beg, a:end, cmtCheck, commentMode, cstart, cend)
+    exec s:CommentDef(a:beg, a:end, cmtCheck, commentMode, cstart, cend)
     if commentAnyway
         let mode = 0
     endif
     " go
     if commentMode ==# 'B'
         " We want a comment block
-        call <SID>CommentBlock(a:beg, a:end, mode, cmtCheck, cms, indentStr)
+        call s:CommentBlock(a:beg, a:end, mode, cmtCheck, cms, indentStr)
     else
         " We want commented lines
         " final search pattern for uncommenting
@@ -229,27 +236,28 @@ fun! TComment(beg, end, ...)
         " final pattern for commenting
         let cmtReplace = escape(cms0, '"/')
         silent exec a:beg .','. a:end .'s/\V'. 
-                    \ <SID>StartRx(cstart) . indentStr .'\zs\(\.\*\)'. <SID>EndRx(cend) .'/'.
-                    \ '\=<SID>ProcessedLine('. mode .', submatch(0), "'. cmtCheck .'", "'. cmtReplace .'")/ge'
+                    \ s:StartRx(cstart) . indentStr .'\zs\(\.\*\)'. s:EndRx(cend) .'/'.
+                    \ '\=s:ProcessedLine('. mode .', submatch(0), "'. cmtCheck .'", "'. cmtReplace .'")/ge'
     endif
     " reposition cursor
-    silent exec 'norm! '. li .'G'. co .'|'
+    " silent exec 'norm! '. li .'G'. co .'|'
+    call cursor(li, co)
 endf
 
 " :line1,line2 TComment ?commentBegin ?commentEnd
-command! -bang -range -nargs=* TComment call TComment(<line1>, <line2>, 'G', "<bang>", <f-args>)
+command! -bang -range -nargs=* TComment keepjumps call TComment(<line1>, <line2>, 'G', "<bang>", <f-args>)
 
 " :line1,line2 TCommentRight ?commentBegin ?commentEnd
-command! -bang -range -nargs=* TCommentRight call TComment(<line1>, <line2>, 'R', "<bang>", <f-args>)
+command! -bang -range -nargs=* TCommentRight keepjumps call TComment(<line1>, <line2>, 'R', "<bang>", <f-args>)
 
 " :line1,line2 TCommentBlock ?commentBegin ?commentEnd
-command! -bang -range -nargs=* TCommentBlock call TComment(<line1>, <line2>, 'B', "<bang>", <f-args>)
+command! -bang -range -nargs=* TCommentBlock keepjumps call TComment(<line1>, <line2>, 'B', "<bang>", <f-args>)
 
 " :line1,line2 TCommentInline ?commentBegin ?commentEnd
-command! -bang -range -nargs=* TCommentInline call TComment(<line1>, <line2>, 'I', "<bang>", <f-args>)
+command! -bang -range -nargs=* TCommentInline keepjumps call TComment(<line1>, <line2>, 'I', "<bang>", <f-args>)
 
 " :line1,line2 TCommentMaybeInline ?commentBegin ?commentEnd
-command! -bang -range -nargs=* TCommentMaybeInline call TComment(<line1>, <line2>, 'IG', "<bang>", <f-args>)
+command! -bang -range -nargs=* TCommentMaybeInline keepjumps call TComment(<line1>, <line2>, 'IG', "<bang>", <f-args>)
 
 " comment text as if it were of a specific filetype
 fun! TCommentAs(beg, end, commentAnyway, filetype)
@@ -263,7 +271,7 @@ fun! TCommentAs(beg, end, commentAnyway, filetype)
         let commentMode = 'G'
         let ft = a:filetype
     endif
-    exec <SID>GetCommentString(a:beg, a:end, commentMode, ft)
+    exec s:GetCommentString(a:beg, a:end, commentMode, ft)
     let pre  = substitute(cms, '%s.*$',    '', '')
     let pre  = substitute(pre, '%%', '%', 'g')
     let post = substitute(cms, '^.\{-}%s', '', '')
@@ -275,41 +283,35 @@ endf
 command! -bang -complete=custom,TCommentFileTypes -range -nargs=1 TCommentAs 
             \ call TCommentAs(<line1>, <line2>, "<bang>", <f-args>)
 
-if !hasmapto(":TComment<cr>")
-    noremap <silent> <c-_><c-_> :TComment<cr>
-    vnoremap <silent> <c-_><c-_> :TCommentMaybeInline<cr>
-    inoremap <silent> <c-_><c-_> <c-o>:TComment<cr>
-    noremap <silent> <Leader>__ :TComment<cr>
-    vnoremap <silent> <Leader>__ :TCommentMaybeInline<cr>
+if (g:tcommentMapLeader1 != '')
+    exec 'noremap <silent> '. g:tcommentMapLeader1 .'<c-_> :TComment<cr>'
+    exec 'vnoremap <silent> '. g:tcommentMapLeader1 .'<c-_> :TCommentMaybeInline<cr>'
+    exec 'inoremap <silent> '. g:tcommentMapLeader1 .'<c-_> <c-o>:TComment<cr>'
+    exec 'noremap <silent> '. g:tcommentMapLeader1 .'p vip:TComment<cr>'
+    exec 'noremap '. g:tcommentMapLeader1 .'<space> :TComment '
+    exec 'inoremap '. g:tcommentMapLeader1 .'<space> <c-o>:TComment '
+    exec 'inoremap <silent> '. g:tcommentMapLeader1 .'r <c-o>:TCommentRight<cr>'
+    exec 'noremap <silent> '. g:tcommentMapLeader1 .'r :TCommentRight<cr>'
+    exec 'vnoremap <silent> '. g:tcommentMapLeader1 .'i :TCommentInline<cr>'
+    exec 'vnoremap <silent> '. g:tcommentMapLeader1 .'r :TCommentRight<cr>'
+    exec 'noremap '. g:tcommentMapLeader1 .'b :TCommentBlock<cr>'
+    exec 'inoremap '. g:tcommentMapLeader1 .'b <c-o>:TCommentBlock<cr>'
+    exec 'noremap '. g:tcommentMapLeader1 .'a :TCommentAs '
+    exec 'inoremap '. g:tcommentMapLeader1 .'a <c-o>:TCommentAs '
+    exec 'noremap '. g:tcommentMapLeader1 .'s :TCommentAs <c-r>=&ft<cr>_'
+    exec 'inoremap '. g:tcommentMapLeader1 .'s <c-o>:TCommentAs <c-r>=&ft<cr>_'
 endif
-if !hasmapto(":TComment ")
-    noremap <c-_><space> :TComment 
-    inoremap <c-_><space> <c-o>:TComment 
-    noremap <Leader>_<space> :TComment<cr>
-endif
-if !hasmapto(":TCommentInline<cr>")
-    vnoremap <silent> <c-_>i :TCommentInline<cr>
-    vnoremap <silent> <Leader>_i :TCommentInline<cr>
-endif
-if !hasmapto(":TCommentRight<cr>")
-    inoremap <silent> <c-_>r <c-o>:TCommentRight<cr>
-    noremap <silent> <c-_>r :TCommentRight<cr>
-    noremap <silent> <Leader>_r :TCommentRight<cr>
-    vnoremap <silent> <c-_>r :TCommentRight<cr>
-    vnoremap <silent> <Leader>_r :TCommentRight<cr>
-endif
-if !hasmapto(":TCommentBlock<cr>")
-    noremap <c-_>b :TCommentBlock<cr>
-    noremap <Leader>_b :TCommentBlock<cr>
-    inoremap <c-_>b <c-o>:TCommentBlock<cr>
-endif
-if !hasmapto(":TCommentAs")
-    noremap <c-_>a :TCommentAs 
-    noremap <Leader>_a :TCommentAs 
-    inoremap <c-_>a <c-o>:TCommentAs 
-    noremap <c-_>s :TCommentAs <c-r>=&ft<cr>_
-    noremap <Leader>_s :TCommentAs <c-r>=&ft<cr>_
-    inoremap <c-_>s <c-o>:TCommentAs <c-r>=&ft<cr>_
+if (g:tcommentMapLeader2 != '')
+    exec 'noremap <silent> '. g:tcommentMapLeader2 .'_ :TComment<cr>'
+    exec 'vnoremap <silent> '. g:tcommentMapLeader2 .'_ :TCommentMaybeInline<cr>'
+    exec 'noremap <silent> '. g:tcommentMapLeader2 .'p vip:TComment<cr>'
+    exec 'noremap '. g:tcommentMapLeader2 .'<space> :TComment '
+    exec 'vnoremap <silent> '. g:tcommentMapLeader2 .'i :TCommentInline<cr>'
+    exec 'noremap <silent> '. g:tcommentMapLeader2 .'r :TCommentRight<cr>'
+    exec 'vnoremap <silent> '. g:tcommentMapLeader2 .'r :TCommentRight<cr>'
+    exec 'noremap '. g:tcommentMapLeader2 .'b :TCommentBlock<cr>'
+    exec 'noremap '. g:tcommentMapLeader2 .'a :TCommentAs '
+    exec 'noremap '. g:tcommentMapLeader2 .'s :TCommentAs <c-r>=&ft<cr>_'
 endif
 
 
@@ -345,16 +347,16 @@ fun! TCommentFileTypes(ArgLead, CmdLine, CursorPos)
     endif
 endf
 
-fun! <SID>EncodeCommentPart(string)
+fun! s:EncodeCommentPart(string)
     return substitute(a:string, '%', '%%', 'g')
 endf
 
-" <SID>GetCommentString(beg, end, commentMode, ?filetype="")
+" s:GetCommentString(beg, end, commentMode, ?filetype="")
 " => RecordCMS
-fun! <SID>GetCommentString(beg, end, commentMode, ...)
+fun! s:GetCommentString(beg, end, commentMode, ...)
     let ft = a:0 >= 1 ? a:1 : ''
     if ft != ''
-        exec <SID>GetCustomCommentString(ft, a:commentMode)
+        exec s:GetCustomCommentString(ft, a:commentMode)
     else
         let cms = ''
         let commentMode = a:commentMode
@@ -362,13 +364,13 @@ fun! <SID>GetCommentString(beg, end, commentMode, ...)
     if cms == ''
         if exists('b:commentstring')
             let cms = b:commentstring
-            return <SID>GetCustomCommentString(&filetype, a:commentMode, cms)
+            return s:GetCustomCommentString(&filetype, a:commentMode, cms)
         elseif exists('b:commentStart') && b:commentStart != ''
-            let cms = <SID>EncodeCommentPart(b:commentStart) .' %s'
+            let cms = s:EncodeCommentPart(b:commentStart) .' %s'
             if exists('b:commentEnd') && b:commentEnd != ''
-                let cms = cms .' '. <SID>EncodeCommentPart(b:commentEnd)
+                let cms = cms .' '. s:EncodeCommentPart(b:commentEnd)
             endif
-            return <SID>GetCustomCommentString(&filetype, a:commentMode, cms)
+            return s:GetCustomCommentString(&filetype, a:commentMode, cms)
         elseif g:tcommentGuessFileType || (exists('g:tcommentGuessFileType_'. &filetype) 
                     \ && g:tcommentGuessFileType_{&filetype} =~ '[^0]')
             if g:tcommentGuessFileType_{&filetype} == 1
@@ -376,17 +378,17 @@ fun! <SID>GetCommentString(beg, end, commentMode, ...)
             else
                 let altFiletype = g:tcommentGuessFileType_{&filetype}
             endif
-            return <SID>GuessFileType(a:beg, a:end, a:commentMode, altFiletype)
+            return s:GuessFileType(a:beg, a:end, a:commentMode, &filetype, altFiletype)
         else
-            return <SID>GetCustomCommentString(&filetype, a:commentMode, <SID>GuessCurrentCommentString(a:commentMode))
+            return s:GetCustomCommentString(&filetype, a:commentMode, s:GuessCurrentCommentString(a:commentMode))
         endif
     endif
-    return <SID>RecordCMS(cms, commentMode)
+    return s:RecordCMS(cms, commentMode)
 endf
 
-" <SID>SPrintF(formatstring, ?values ...)
+" s:SPrintF(formatstring, ?values ...)
 " => string
-fun! <SID>SPrintF(string, ...)
+fun! s:SPrintF(string, ...)
     let n = 1
     let r = ''
     let s = a:string
@@ -419,7 +421,7 @@ fun! <SID>SPrintF(string, ...)
     endwh
 endf
 
-fun! <SID>StartRx(pos)
+fun! s:StartRx(pos)
     if a:pos == 0
         return '\^'
     else
@@ -427,7 +429,7 @@ fun! <SID>StartRx(pos)
     endif
 endf
 
-fun! <SID>EndRx(pos)
+fun! s:EndRx(pos)
     if a:pos == 0
         return '\$'
     else
@@ -435,26 +437,26 @@ fun! <SID>EndRx(pos)
     endif
 endf
 
-fun! <SID>GetIndentString(line, start)
+fun! s:GetIndentString(line, start)
     let start = a:start > 0 ? a:start - 1 : 0
     return substitute(strpart(getline(a:line), start), '\V\^\s\*\zs\.\*\$', '', '')
 endf
 
-fun! <SID>CommentDef(beg, end, checkRx, commentMode, cstart, cend)
-    let mdrx = '\V'. <SID>StartRx(a:cstart) .'\s\*'. a:checkRx .'\s\*'. <SID>EndRx(0)
+fun! s:CommentDef(beg, end, checkRx, commentMode, cstart, cend)
+    let mdrx = '\V'. s:StartRx(a:cstart) .'\s\*'. a:checkRx .'\s\*'. s:EndRx(0)
     let line = getline(a:beg)
     if a:cstart != 0 && a:cend != 0
         let line = strpart(line, 0, a:cend - 1)
     endif
     let mode = (line =~ mdrx)
-    let it = <SID>GetIndentString(a:beg, a:cstart)
+    let it = s:GetIndentString(a:beg, a:cstart)
     let il = indent(a:beg)
     let n  = a:beg + 1
     while n <= a:end
         if getline(n) =~ '\S'
             let jl = indent(n)
             if jl < il
-                let it = <SID>GetIndentString(n, a:cstart)
+                let it = s:GetIndentString(n, a:cstart)
                 let il = jl
             endif
             if a:commentMode ==# 'G'
@@ -477,7 +479,7 @@ fun! <SID>CommentDef(beg, end, checkRx, commentMode, cstart, cend)
     return 'let indentStr="'. it .'" | let mode='. mode
 endf
 
-fun! <SID>ProcessedLine(mode, match, checkRx, replace)
+fun! s:ProcessedLine(mode, match, checkRx, replace)
     if !(a:match =~ '\S' || g:tcommentBlankLines)
         return a:match
     endif
@@ -486,18 +488,18 @@ fun! <SID>ProcessedLine(mode, match, checkRx, replace)
         let rv = substitute(a:match, a:checkRx, '\1\2', '')
     else
         " comment
-        let rv = <SID>SPrintF(a:replace, a:match)
+        let rv = s:SPrintF(a:replace, a:match)
     endif
     let rv = escape(rv, '\')
     let rv = substitute(rv, '\n', '\\\n', 'g')
     return rv
 endf
 
-fun! <SID>CommentBlock(beg, end, mode, checkRx, replace, indentStr)
+fun! s:CommentBlock(beg, end, mode, checkRx, replace, indentStr)
     let t = @t
     try
         silent exec 'norm! '. a:beg.'G1|v'.a:end.'G$"td'
-        let ms = <SID>BlockGetMiddleString(a:replace)
+        let ms = s:BlockGetMiddleString(a:replace)
         let mx = escape(ms, '\')
         if a:mode
             " uncomment
@@ -509,7 +511,7 @@ fun! <SID>CommentBlock(beg, end, mode, checkRx, replace, indentStr)
             let @t = substitute(@t, '\n\s*$', '', '')
         else
             " comment
-            let cs = <SID>BlockGetCommentString(a:replace)
+            let cs = s:BlockGetCommentString(a:replace)
             let cs = a:indentStr . substitute(cs, '%s', '%s'. a:indentStr, '')
             if ms != ''
                 let ms = a:indentStr . ms
@@ -517,7 +519,7 @@ fun! <SID>CommentBlock(beg, end, mode, checkRx, replace, indentStr)
                 let @t = substitute(@t, '^'. a:indentStr, '', 'g')
                 let @t = ms . substitute(@t, '\n'. a:indentStr, '\n'. mx, 'g')
             endif
-            let @t = <SID>SPrintF(cs, "\n". @t ."\n")
+            let @t = s:SPrintF(cs, "\n". @t ."\n")
         endif
         silent norm! "tP
     finally
@@ -527,17 +529,17 @@ endf
 
 " inspired by Meikel Brandmeyer's EnhancedCommentify.vim
 " this requires that a syntax names are prefixed by the filetype name 
-" <SID>GuessFileType(beg, end, commentMode, ?fallbackFiletype)
+" s:GuessFileType(beg, end, commentMode, filetype, ?fallbackFiletype)
 " => RecordCMS
-fun! <SID>GuessFileType(beg, end, commentMode, ...)
+fun! s:GuessFileType(beg, end, commentMode, filetype, ...)
     if a:0 >= 1 && a:1 != ''
-        exec <SID>GetCustomCommentString(a:1, a:commentMode)
+        exec s:GetCustomCommentString(a:1, a:commentMode)
         if cms == ''
-            let cms = <SID>GuessCurrentCommentString(a:commentMode)
+            let cms = s:GuessCurrentCommentString(a:commentMode)
         endif
     else
         let commentMode = 'G'
-        let cms = <SID>GuessCurrentCommentString(0)
+        let cms = s:GuessCurrentCommentString(0)
     endif
     let n  = a:beg
     while n <= a:end
@@ -547,7 +549,11 @@ fun! <SID>GuessFileType(beg, end, commentMode, ...)
             let syntaxName = synIDattr(synID(n, m, 1), 'name')
             if syntaxName =~ g:tcommentFileTypesRx
                 let ft = substitute(syntaxName, g:tcommentFileTypesRx, '\1', '')
-                return <SID>GetCustomCommentString(ft, a:commentMode, cms)
+                if exists('g:tcommentIgnoreTypes_'. a:filetype) && g:tcommentIgnoreTypes_{a:filetype} =~ '\<'.ft.'\>'
+                    let m = m + 1
+                else
+                    return s:GetCustomCommentString(ft, a:commentMode, cms)
+                endif
             elseif syntaxName == '' || syntaxName == 'None' || syntaxName =~ '^\u\+$' || syntaxName =~ '^\u\U*$'
                 let m = m + 1
             else
@@ -556,10 +562,10 @@ fun! <SID>GuessFileType(beg, end, commentMode, ...)
         endwh
         let n = n + 1
     endwh
-    return <SID>RecordCMS(cms, commentMode)
+    return s:RecordCMS(cms, commentMode)
 endf
 
-fun! <SID>GuessCurrentCommentString(commentMode)
+fun! s:GuessCurrentCommentString(commentMode)
     let valid_cms = (stridx(&commentstring, '%s') != -1)
     if &commentstring != s:defaultCommentString && valid_cms
         " The &commentstring appears to have been set and to be valid
@@ -568,7 +574,7 @@ fun! <SID>GuessCurrentCommentString(commentMode)
     if &comments != s:defaultComments
         " the commentstring is the default one, so we assume that it wasn't 
         " explicitly set; we then try to reconstruct &cms from &comments
-        let cms = <SID>ConstructFromComments(a:commentMode)
+        let cms = s:ConstructFromComments(a:commentMode)
         if cms != s:nullCommentString
             return cms
         endif
@@ -583,16 +589,16 @@ fun! <SID>GuessCurrentCommentString(commentMode)
     endif
 endf
 
-fun! <SID>ConstructFromComments(commentMode)
-    exec <SID>ExtractCommentsPart('')
+fun! s:ConstructFromComments(commentMode)
+    exec s:ExtractCommentsPart('')
     if a:commentMode == 'G' && line != ''
         return line .' %s'
     endif
-    exec <SID>ExtractCommentsPart('s')
+    exec s:ExtractCommentsPart('s')
     if s != ''
-        exec <SID>ExtractCommentsPart('e')
+        exec s:ExtractCommentsPart('e')
         " if a:commentMode
-        "     exec <SID>ExtractCommentsPart("m")
+        "     exec s:ExtractCommentsPart("m")
         "     if m != ""
         "         let m = "\n". m
         "     endif
@@ -608,7 +614,7 @@ fun! <SID>ConstructFromComments(commentMode)
     endif
 endf
 
-fun! <SID>ExtractCommentsPart(key)
+fun! s:ExtractCommentsPart(key)
     " let key   = a:key != "" ? a:key .'[^:]*' : ""
     let key = a:key . '[bnflrxO0-9-]*'
     let val = substitute(&comments, '^\(.\{-},\)\{-}'. key .':\([^,]\+\).*$', '\2', '')
@@ -621,9 +627,9 @@ fun! <SID>ExtractCommentsPart(key)
     return 'let '. var .'="'. escape(val, '"') .'"'
 endf
 
-" <SID>GetCustomCommentString(ft, commentMode, ?default="")
+" s:GetCustomCommentString(ft, commentMode, ?default="")
 " => RecordCMS
-fun! <SID>GetCustomCommentString(ft, commentMode, ...)
+fun! s:GetCustomCommentString(ft, commentMode, ...)
     let commentMode   = a:commentMode
     let customComment = exists('g:tcomment_'. a:ft)
     if commentMode ==# 'B' && exists('g:tcomment_'. a:ft .'_block')
@@ -640,18 +646,18 @@ fun! <SID>GetCustomCommentString(ft, commentMode, ...)
         let cms = ''
         let commentMode = 'G'
     endif
-    return <SID>RecordCMS(cms, commentMode)
+    return s:RecordCMS(cms, commentMode)
 endf
 
-fun! <SID>RecordCMS(cms, commentMode)
+fun! s:RecordCMS(cms, commentMode)
     return 'let cms="'. escape(a:cms, '"') .'" | let commentMode="'. a:commentMode .'"'
 endf
 
-fun! <SID>BlockGetCommentString(cms)
+fun! s:BlockGetCommentString(cms)
     return substitute(a:cms, '\n.*$', '', '')
 endf
 
-fun! <SID>BlockGetMiddleString(cms)
+fun! s:BlockGetMiddleString(cms)
     let rv = substitute(a:cms, '^.\{-}\n\([^\n]*\)', '\1', '')
     return rv == a:cms ? '' : rv
 endf
@@ -707,4 +713,14 @@ defining a new filetype via TCommentDefineType()
 - Disabled single <c-_> mappings
 - Renamed TCommentVisualBlock to TCommentRight
 - FIX: Forgot 'x' in ExtractCommentsPart() (thanks to Fredrik Acosta)
+
+1.6
+- Ignore sql when guessing the comment string in php files; tComment 
+sometimes chooses the wrong comment string because the use of sql syntax 
+is used too loosely in php files; if you want to comment embedded sql 
+code you have to use TCommentAs
+- Use keepjumps in commands.
+- Map <c-_>p & <L>_p to vip:TComment<cr>
+- Made key maps configurable via g:tcommentMapLeader1 and 
+g:tcommentMapLeader2
 

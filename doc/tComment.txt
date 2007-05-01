@@ -1,4 +1,4 @@
-*tComment.txt*  tComment -- One comment plugin to rule them all
+*tComment.txt*  tComment -- An easily extensible & universal comment plugin
 
 Author: Thomas Link, samul AT web.de
 
@@ -27,6 +27,7 @@ lines, and it will remove comment markup for already commented text
 
                                                     *tComment-Key-Bindings*
 Key bindings~
+
     <c-_><c-_>   :: :TComment
     <c-_><space> :: :TComment <QUERY COMMENT-BEGIN ?COMMENT-END>
     <c-_>b       :: :TCommentBlock
@@ -34,6 +35,31 @@ Key bindings~
     <c-_>s       :: :TCommentAs &filetype_<QUERY COMMENT SUBTYPE>
     <c-_>i       :: :TCommentInline
     <c-_>r       :: :TCommentRight
+    <c-_>p       :: Comment the current inner paragraph
+
+A secondary set of key maps is defined for normal mode.
+
+    <Leader>__       :: :TComment
+    <Leader>_p       :: Comment the current inner paragraph
+    <Leader>_<space> :: :TComment <QUERY COMMENT-BEGIN ?COMMENT-END>
+    <Leader>_i       :: :TCommentInline
+    <Leader>_r       :: :TCommentRight
+    <Leader>_b       :: :TCommentBlock
+    <Leader>_a       :: :TCommentAs <QUERY COMMENT TYPE>
+    <Leader>_s       :: :TCommentAs &filetype_<QUERY COMMENT SUBTYPE>
+
+Keymaps are configurable via the following variables:
+
+                                                    *g:tcommentMapLeader1*
+g:tcommentMapLeader1    string (default: <c-_>)
+        Prefix for the keymaps. Set to '' to disable keymaps with this 
+        prefix.
+                                                    *g:tcommentMapLeader2*
+g:tcommentMapLeader2    string (default: <Leader>_)
+        Secondary prefix. (The reason for why there are two prefixes is 
+        that <c-_> appears preferable with gvim but can be difficult to 
+        type on the terminal. The secondary prefix isn't used for insert 
+        mode maps. Set to '' to disable keymaps with this prefix.
 
                                                     *tComment-commands*
 Alternatively, you can type (? meaning "optional argument"):
@@ -143,9 +169,11 @@ or 'comments' variables):
     php, prolog, ruby, r, scheme, sgml, sh, sql, spec, sps, tcl, tex, 
     tpl, viki, vim, websec, xml, xslt, yaml
 
+
 Credits~
-The way we check for embedded syntax was adapted from/inspired by Meikel 
-Brandmeyer's EnhancedCommentify.vim (vimscript #23).
+The way we check for embedded syntax was originally adapted 
+from/inspired by Meikel Brandmeyer's EnhancedCommentify.vim
+(vimscript #23) but has evolved since.
 
 
 vim: tw=72
