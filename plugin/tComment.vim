@@ -3,7 +3,7 @@
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     27-Dez-2004.
 " @Last Change: 2008-05-01.
-" @Revision:    1.8.654
+" @Revision:    1.8.655
 " 
 " GetLatestVimScripts: 1173 1 tComment.vim
 
@@ -371,6 +371,6 @@ new: >)
 - Split the plugin into autoload & plugin.
 - g:TCommentFileTypes is a list
 - Fixed some block comment strings
-- Removed extranuous newline in some block comments.
+- Removed extraneous newline in some block comments.
 - Maps for visal mode (thanks Krzysztof Goj)
 
