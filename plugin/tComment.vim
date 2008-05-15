@@ -2,15 +2,15 @@
 " @Author:      Thomas Link (micathom AT gmail com)
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     27-Dez-2004.
-" @Last Change: 2008-05-01.
-" @Revision:    1.8.655
+" @Last Change: 2008-05-15.
+" @Revision:    1.9.664
 " 
 " GetLatestVimScripts: 1173 1 tComment.vim
 
 if &cp || exists('loaded_tcomment')
     finish
 endif
-let loaded_tcomment = 108
+let loaded_tcomment = 109
 
 " If true, comment blank lines too
 if !exists("g:tcommentBlankLines")
@@ -242,6 +242,7 @@ command! -bang -range -nargs=* TCommentInline keepjumps call tcomment#Comment(<l
 command! -bang -range -nargs=* TCommentMaybeInline keepjumps call tcomment#Comment(<line1>, <line2>, 'i', "<bang>", <f-args>)
 
 
+
 if (g:tcommentMapLeader1 != '')
     exec 'noremap <silent> '. g:tcommentMapLeader1 .'<c-_> :TComment<cr>'
     exec 'vnoremap <silent> '. g:tcommentMapLeader1 .'<c-_> :TCommentMaybeInline<cr>'
@@ -277,16 +278,14 @@ if (g:tcommentMapLeader2 != '')
     exec 'noremap '. g:tcommentMapLeader2 .'s :TCommentAs <c-r>=&ft<cr>_'
 endif
 if (g:tcommentMapLeaderOp1 != '')
-    exec 'noremap <silent> '. g:tcommentMapLeaderOp1 .' :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#Operator<cr>g@'
-    exec 'noremap <silent> '. g:tcommentMapLeaderOp1 .'c :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#OperatorLine<cr>g@$'
+    exec 'nnoremap <silent> '. g:tcommentMapLeaderOp1 .' :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#Operator<cr>g@'
+    exec 'nnoremap <silent> '. g:tcommentMapLeaderOp1 .'c :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#OperatorLine<cr>g@$'
     exec 'vnoremap <silent> '. g:tcommentMapLeaderOp1 .' :TCommentMaybeInline<cr>'
-    exec 'vnoremap <silent> '. g:tcommentMapLeaderOp1 .'c :TCommentMaybeInline<cr>'
 endif 
 if (g:tcommentMapLeaderOp2 != '')
-    exec 'noremap <silent> '. g:tcommentMapLeaderOp2 .' :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#OperatorAnyway<cr>g@'
-    exec 'noremap <silent> '. g:tcommentMapLeaderOp2 .'c :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#OperatorLineAnyway<cr>g@$'
+    exec 'nnoremap <silent> '. g:tcommentMapLeaderOp2 .' :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#OperatorAnyway<cr>g@'
+    exec 'nnoremap <silent> '. g:tcommentMapLeaderOp2 .'c :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#OperatorLineAnyway<cr>g@$'
     exec 'vnoremap <silent> '. g:tcommentMapLeaderOp2 .' :TCommentMaybeInline<cr>'
-    exec 'vnoremap <silent> '. g:tcommentMapLeaderOp2 .'c :TCommentMaybeInline<cr>'
 endif 
 
 finish
@@ -373,4 +372,7 @@ new: >)
 - Fixed some block comment strings
 - Removed extraneous newline in some block comments.
 - Maps for visal mode (thanks Krzysztof Goj)
+
+1.9
+- Fix left offset for inline comments (via operator binding)
 

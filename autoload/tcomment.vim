@@ -3,8 +3,8 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     2007-09-17.
-" @Last Change: 2007-12-27.
-" @Revision:    0.0.33
+" @Last Change: 2008-05-07.
+" @Revision:    0.0.46
 
 if &cp || exists("loaded_tcomment_autoload")
     finish
@@ -28,8 +28,11 @@ let s:nullCommentString    = '%s'
 " commentMode:
 "   G ... guess
 "   B ... block
+"   i ... maybe inline, guess
 "   I ... inline
 "   R ... right
+"   v ... visual
+"   o ... operator
 function! tcomment#Comment(beg, end, ...)
     " save the cursor position
     let co = col('.')
@@ -37,6 +40,7 @@ function! tcomment#Comment(beg, end, ...)
     let s:pos_end = getpos("'>")
     let commentMode   = a:0 >= 1 ? a:1 : 'G'
     let commentAnyway = a:0 >= 2 ? (a:2 == '!') : 0
+    " TLogVAR a:beg, a:end, a:1, commentMode, commentAnyway
     if commentMode =~# 'i'
         let commentMode = substitute(commentMode, '\Ci', line("'<") == line("'>") ? 'I' : 'G', 'g')
     endif
@@ -50,6 +54,9 @@ function! tcomment#Comment(beg, end, ...)
             let cend = 0
         else
             let cend = col("'>")
+            if commentMode =~# 'o'
+                let cend += 1
+            endif
         endif
     else
         let cstart = 0
@@ -129,7 +136,7 @@ function! tcomment#Operator(type, ...) "{{{3
         let end = line("']")
         norm! 
         let commentMode .= g:tcommentOpModeExtra
-        call tcomment#Comment(beg, end, commentMode, bang)
+        call tcomment#Comment(beg, end, commentMode.'o', bang)
     finally
         let &selection = sel_save
         let @@ = reg_save
