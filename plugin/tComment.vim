@@ -1,9 +1,9 @@
 " tComment.vim -- An easily extensible & universal comment plugin 
-" @Author:      Thomas Link (micathom AT gmail com)
+" @Author:      Tom Link (micathom AT gmail com)
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     27-Dez-2004.
-" @Last Change: 2008-05-15.
-" @Revision:    1.9.664
+" @Last Change: 2009-08-07.
+" @Revision:    1.9.671
 " 
 " GetLatestVimScripts: 1173 1 tComment.vim
 
@@ -129,6 +129,7 @@ call TCommentDefineType('c_inline',         g:tcommentInlineC  )
 call TCommentDefineType('c_block',          g:tcommentBlockC   )
 call TCommentDefineType('cfg',              '# %s'             )
 call TCommentDefineType('conf',             '# %s'             )
+call TCommentDefineType('crontab',          '# %s'             )
 call TCommentDefineType('desktop',          '# %s'             )
 call TCommentDefineType('docbk',            '<!-- %s -->'      )
 call TCommentDefineType('docbk_inline',     g:tcommentInlineXML)
@@ -158,7 +159,9 @@ call TCommentDefineType('java',             '/* %s */'         )
 call TCommentDefineType('java_inline',      g:tcommentInlineC  )
 call TCommentDefineType('java_block',       g:tcommentBlockC   )
 call TCommentDefineType('java_doc_block',   g:tcommentBlockC2  )
+call TCommentDefineType('jproperties',      '# %s'             )
 call TCommentDefineType('lisp',             '; %s'             )
+call TCommentDefineType('lynx',             '# %s'             )
 call TCommentDefineType('m4',               'dnl %s'           )
 call TCommentDefineType('mail',             '> %s'             )
 call TCommentDefineType('msidl',            '// %s'            )
@@ -375,4 +378,8 @@ new: >)
 
 1.9
 - Fix left offset for inline comments (via operator binding)
+
+1.10
+- tcomment#Operator defines w:tcommentPos if invoked repeatedly
+- s:GuessFileType: use len(getline()) instead of col()
 
