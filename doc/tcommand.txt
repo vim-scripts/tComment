@@ -1,0 +1,76 @@
+*tcommand.txt*      Select and execute a command or menu item from a list
+                    Author: Tom Link, micathom at gmail com
+
+VIM plugins are cool but with time you forget about even useful 
+commands. This plugin provides a command (|:TCommand|) that lets you 
+select a command from a list (you can optionally display help on the 
+currently hightlighted command) and then run it from the command line.
+It thus provides an alternative to the built-in command-line completion.
+
+
+-----------------------------------------------------------------------
+Install~
+
+Edit the vba file and type: >
+
+    :so %
+
+See :help vimball for details. If you have difficulties or use vim 7.0, 
+please make sure, you have the current version of vimball
+(vimscript #1502) installed or update your runtime.
+
+This script requires tlib (vimscript #1863) to be installed.
+
+Also available via git: http://github.com/tomtom/tcommand_vim/
+
+
+Post-Install~
+
+Suggested maps (to be set in your |vimrc| file): >
+
+    noremap <Leader>: :TCommand<cr>
+
+
+========================================================================
+Contents~
+
+        :TCommand ............... |:TCommand|
+        g:tcommand#hide_rx ...... |g:tcommand#hide_rx|
+        g:tcommand#what ......... |g:tcommand#what|
+        g:tcommand#favourites ... |g:tcommand#favourites|
+        tcommand#Select ......... |tcommand#Select()|
+
+
+========================================================================
+plugin/tcommand.vim~
+
+                                                    *:TCommand*
+TCommand[!] [INITIAL_FILTER]
+    With a '!', reset the list of known commands and menu items.
+
+
+========================================================================
+autoload/tcommand.vim~
+
+                                                    *g:tcommand#hide_rx*
+g:tcommand#hide_rx             (default: '\C\(^\(ToolBar\|Popup\|Hilfe\|Help\)\>\)')
+    Hide entries matching this rx.
+
+                                                    *g:tcommand#what*
+g:tcommand#what
+    The items that should be displayed.
+    By default, tcommand includes:
+       - Commands
+       - Menu items
+       - Faviourite commands (see |g:tcommand#favourites|)
+
+                                                    *g:tcommand#favourites*
+g:tcommand#favourites          (default: {})
+    A collection of favourite commands (pairs of DISPLAY_NAME => EX_COMMAND).
+
+                                                    *tcommand#Select()*
+tcommand#Select(reset, filter)
+
+
+
+vim:tw=78:fo=tcq2:isk=!-~,^*,^|,^":ts=8:ft=help:norl:
