@@ -3,8 +3,8 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     2007-09-17.
-" @Last Change: 2010-12-03.
-" @Revision:    0.0.284
+" @Last Change: 2011-01-20.
+" @Revision:    0.0.315
 
 " call tlog#Log('Load: '. expand('<sfile>')) " vimtlib-sfile
 
@@ -19,8 +19,18 @@ if !exists("g:tcommentOpModeExtra")
     let g:tcommentOpModeExtra = ''   "{{{2
 endif
 
-" Guess the file type based on syntax names always or for some fileformat only
+if !exists('g:tcommentOptions')
+    " Other key-value options used by |tcomment#Comment()|.
+    "
+    " Example: If you want to put the opening comment marker always in 
+    " the first column regardless of the block's indentation, put this 
+    " into your |vimrc| file: >
+    "   let g:tcommentOptions = {'col': 1}
+    let g:tcommentOptions = {}   "{{{2
+endif
+
 if !exists("g:tcommentGuessFileType")
+    " Guess the file type based on syntax names always or for some fileformat only
     " If non-zero, try to guess filetypes.
     " tcomment also checks g:tcommentGuessFileType_{&filetype} for 
     " filetype specific values.
@@ -50,12 +60,23 @@ endif
 if !exists("g:tcommentGuessFileType_vim")
     let g:tcommentGuessFileType_vim = 1   "{{{2
 endif
+if !exists("g:tcommentGuessFileType_django")
+    let g:tcommentGuessFileType_django = 1   "{{{2
+endif
 
 if !exists("g:tcommentIgnoreTypes_php")
     " In php files, some syntax regions are wongly highlighted as sql 
     " markup. We thus ignore sql syntax when guessing the filetype in 
     " php files.
     let g:tcommentIgnoreTypes_php = 'sql'   "{{{2
+endif
+
+if !exists('g:tcomment#syntax_substitute')
+    " :read: let g:tcomment#syntax_substitute = {...}   "{{{2
+    " Perform replacements on the syntax name.
+    let g:tcomment#syntax_substitute = {
+                \ '\C^javaScript': {'sub': 'javascript'}
+                \ }
 endif
 
 if !exists('g:tcommentSyntaxMap')
@@ -171,6 +192,8 @@ call tcomment#DefineType('cs',               '// %s'            )
 call tcomment#DefineType('cs_inline',        g:tcommentInlineC  )
 call tcomment#DefineType('cs_block',         g:tcommentBlockC   )
 call tcomment#DefineType('desktop',          '# %s'             )
+call tcomment#DefineType('django',           '{# %s #}'         )
+call tcomment#DefineType('django_block',     "{%% comment %%}%s{%% endcomment %%}\n ")
 call tcomment#DefineType('docbk',            '<!-- %s -->'      )
 call tcomment#DefineType('docbk_inline',     g:tcommentInlineXML)
 call tcomment#DefineType('docbk_block',      g:tcommentBlockXML )
@@ -181,6 +204,7 @@ call tcomment#DefineType('dylan',            '// %s'            )
 call tcomment#DefineType('eiffel',           '-- %s'            )
 call tcomment#DefineType('erlang',           '%%%% %s'          )
 call tcomment#DefineType('eruby',            '<%%# %s'          )
+call tcomment#DefineType('fstab',            '# %s'             )
 call tcomment#DefineType('gitcommit',        '# %s'             )
 call tcomment#DefineType('gtkrc',            '# %s'             )
 call tcomment#DefineType('go',               '// %s'            )
@@ -289,7 +313,8 @@ let s:nullCommentString    = '%s'
 
 " tcomment#Comment(line1, line2, ?commentMode, ?commentAnyway, ?args...)
 " args... are either:
-"   1. a list of key=value pairs where known keys are:
+"   1. a list of key=value pairs where known keys are (see also 
+"      |g:tcommentOptions|):
 "         as=STRING     ... Use a specific comment definition
 "         col=N         ... Start the comment at column N (in block mode; must 
 "                           be smaller than |indent()|)
@@ -327,10 +352,11 @@ function! tcomment#Comment(beg, end, ...)
     let [cstart, cend] = s:GetStartEnd(commentMode)
     " TLogVAR commentMode, cstart, cend
     " get the correct commentstring
+    let cdef = copy(g:tcommentOptions)
     if a:0 >= 3 && type(a:3) == 4
-        let cdef = a:3
+        call extend(cdef, a:3)
     else
-        let cdef = s:GetCommentDefinition(a:beg, a:end, commentMode)
+        call extend(cdef, s:GetCommentDefinition(a:beg, a:end, commentMode))
         let ax = 3
         if a:0 >= 3 && a:3 != '' && stridx(a:3, '=') == -1
             let ax = 4
@@ -813,7 +839,7 @@ function! s:GuessFileType(beg, end, commentMode, filetype, ...)
         let le = len(getline(n))
         " TLogVAR m, le
         while m < le
-            let syntaxName = synIDattr(synID(n, m, 1), 'name')
+            let syntaxName = s:GetSyntaxName(n, m)
             " TLogVAR syntaxName, n, m
             let ftypeMap   = get(g:tcommentSyntaxMap, syntaxName)
             if !empty(ftypeMap)
@@ -837,6 +863,21 @@ function! s:GuessFileType(beg, end, commentMode, filetype, ...)
     endwh
     return cdef
 endf
+
+
+function! s:GetSyntaxName(lnum, col) "{{{3
+    let syntaxName = synIDattr(synID(a:lnum, a:col, 1), 'name')
+    if !empty(g:tcomment#syntax_substitute)
+        for [rx, subdef] in items(g:tcomment#syntax_substitute)
+            if !has_key(subdef, 'if') || eval(subdef.if)
+                let syntaxName = substitute(syntaxName, rx, subdef.sub, 'g')
+            endif
+        endfor
+    endif
+    " TLogVAR syntaxName
+    return syntaxName
+endf
+
 
 function! s:CommentMode(commentMode, newmode) "{{{3
     return substitute(a:commentMode, '\w\+', a:newmode, 'g')
