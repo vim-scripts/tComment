@@ -137,6 +137,7 @@ Contents~
         g:tcommentGuessFileType_vim ......... |g:tcommentGuessFileType_vim|
         g:tcommentGuessFileType_django ...... |g:tcommentGuessFileType_django|
         g:tcommentGuessFileType_eruby ....... |g:tcommentGuessFileType_eruby|
+        g:tcommentGuessFileType_smarty ...... |g:tcommentGuessFileType_smarty|
         g:tcommentIgnoreTypes_php ........... |g:tcommentIgnoreTypes_php|
         g:tcomment#syntax_substitute ........ |g:tcomment#syntax_substitute|
         g:tcommentSyntaxMap ................. |g:tcommentSyntaxMap|
@@ -155,6 +156,7 @@ Contents~
         tcomment#OperatorAnyway ............. |tcomment#OperatorAnyway()|
         tcomment#OperatorLineAnyway ......... |tcomment#OperatorLineAnyway()|
         tcomment#CommentAs .................. |tcomment#CommentAs()|
+        tcomment#GuessCommentType ........... |tcomment#GuessCommentType()|
 
 
 ========================================================================
@@ -293,7 +295,7 @@ g:tcommentGuessFileType        (default: 0)
 
                                                     *g:tcommentGuessFileType_dsl*
 g:tcommentGuessFileType_dsl    (default: 'xml')
-    For dsl documents, assumet filetype = xml.
+    For dsl documents, assume filetype = xml.
 
                                                     *g:tcommentGuessFileType_php*
 g:tcommentGuessFileType_php    (default: 'html')
@@ -315,6 +317,9 @@ g:tcommentGuessFileType_django (default: 1)
 
                                                     *g:tcommentGuessFileType_eruby*
 g:tcommentGuessFileType_eruby  (default: 1)
+
+                                                    *g:tcommentGuessFileType_smarty*
+g:tcommentGuessFileType_smarty (default: 1)
 
                                                     *g:tcommentIgnoreTypes_php*
 g:tcommentIgnoreTypes_php      (default: 'sql')
@@ -454,6 +459,24 @@ tcomment#CommentAs(beg, end, commentAnyway, filetype, ?args...)
       2. An args list (see the notes on the "args" argument of 
          |tcomment#Comment()|)
     comment text as if it were of a specific filetype
+
+                                                    *tcomment#GuessCommentType()*
+tcomment#GuessFileType(?options={})
+    A function that makes the s:GuessFileType() function usable for other 
+    library developers.
+
+    The argument is a dictionary with the following keys:
+
+      beg ................ (default = line("."))
+      end ................ (default = line("."))
+      commentMode ........ (default = "G")
+      filetype ........... (default = &filetype)
+      fallbackFiletype ... (default = "")
+
+    This function return a dictionary that contains information about how 
+    to make comments. The information about the filetype of the text 
+    between lines "beg" and "end" is in the "filetype" key of the return 
+    value. It returns the first discernible filetype it encounters.
 
 
 
