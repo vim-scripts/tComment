@@ -2,14 +2,18 @@
 " @Author:      Tom Link (micathom AT gmail com)
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     27-Dez-2004.
-" @Last Change: 2013-11-11.
-" @Revision:    783
+" @Last Change: 2014-02-05.
+" @Revision:    809
 " GetLatestVimScripts: 1173 1 tcomment.vim
 
 if &cp || exists('loaded_tcomment')
     finish
 endif
-let loaded_tcomment = 300
+let loaded_tcomment = 301
+
+let s:save_cpo = &cpo
+set cpo&vim
+
 
 if !exists('g:tcommentMaps')
     " If true, set maps.
@@ -108,70 +112,131 @@ command! -bang -range -nargs=* -complete=customlist,tcomment#CompleteArgs TComme
             \ keepjumps call tcomment#Comment(<line1>, <line2>, 'i', "<bang>", <f-args>)
 
 
+noremap <Plug>TComment-<c-_><c-_> :TComment<cr>
+vnoremap <Plug>TComment-<c-_><c-_> :TCommentMaybeInline<cr>
+inoremap <Plug>TComment-<c-_><c-_> <c-o>:TComment<cr>
+noremap <Plug>TComment-<c-_>p m`vip:TComment<cr>``
+inoremap <Plug>TComment-<c-_>p <c-o>:norm! m`vip<cr>:TComment<cr><c-o>``
+noremap <Plug>TComment-<c-_><space> :TComment 
+inoremap <Plug>TComment-<c-_><space> <c-o>:TComment 
+inoremap <Plug>TComment-<c-_>r <c-o>:TCommentRight<cr>
+noremap <Plug>TComment-<c-_>r :TCommentRight<cr>
+vnoremap <Plug>TComment-<c-_>i :TCommentInline<cr>
+noremap <Plug>TComment-<c-_>i v:TCommentInline mode=I#<cr>
+inoremap <Plug>TComment-<c-_>i <c-\><c-o>v:TCommentInline mode=#<cr>
+noremap <Plug>TComment-<c-_>b :TCommentBlock<cr>
+inoremap <Plug>TComment-<c-_>b <c-\><c-o>:TCommentBlock mode=#<cr>
+noremap <Plug>TComment-<c-_>a :TCommentAs 
+inoremap <Plug>TComment-<c-_>a <c-o>:TCommentAs 
+noremap <Plug>TComment-<c-_>n :TCommentAs <c-r>=&ft<cr> 
+inoremap <Plug>TComment-<c-_>n <c-o>:TCommentAs <c-r>=&ft<cr> 
+noremap <Plug>TComment-<c-_>s :TCommentAs <c-r>=&ft<cr>_
+inoremap <Plug>TComment-<c-_>s <c-o>:TCommentAs <c-r>=&ft<cr>_
+noremap <Plug>TComment-<c-_>cc :<c-u>call tcomment#SetOption("count", v:count1)<cr>
+noremap <Plug>TComment-<c-_>ca :<c-u>call tcomment#SetOption("as", input("Comment as: ", &filetype, "customlist,tcomment#Complete"))<cr>
+
+noremap <Plug>TComment-<Leader>__ :TComment<cr>
+xnoremap <Plug>TComment-<Leader>__ :TCommentMaybeInline<cr>
+noremap <Plug>TComment-<Leader>_p vip:TComment<cr>
+noremap <Plug>TComment-<Leader>_<space> :TComment 
+xnoremap <Plug>TComment-<Leader>_i :TCommentInline<cr>
+noremap <Plug>TComment-<Leader>_r :TCommentRight<cr>
+noremap <Plug>TComment-<Leader>_b :TCommentBlock<cr>
+noremap <Plug>TComment-<Leader>_a :TCommentAs 
+noremap <Plug>TComment-<Leader>_n :TCommentAs <c-r>=&ft<cr> 
+noremap <Plug>TComment-<Leader>_s :TCommentAs <c-r>=&ft<cr>_
+
+nnoremap <silent> <Plug>TComment-gC :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#OperatorAnyway<cr>g@
+nnoremap <silent> <Plug>TComment-gCc :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#OperatorLineAnyway<cr>g@$
+nnoremap <silent> <Plug>TComment-gCb :let w:tcommentPos = getpos(".") \| call tcomment#SetOption("mode_extra", "B") \| set opfunc=tcomment#OperatorLine<cr>g@
+xnoremap <Plug>TComment-gC :TCommentMaybeInline!<cr>
+
+vnoremap <Plug>TComment-ic :<c-U>call tcomment#TextObjectInlineComment()<cr>
+noremap <Plug>TComment-ic :<c-U>call tcomment#TextObjectInlineComment()<cr>
+
+nnoremap <silent> <Plug>TComment-gcc :<c-u>if v:count > 0 \| call tcomment#SetOption("count", v:count) \| endif \| let w:tcommentPos = getpos(".") \| set opfunc=tcomment#OperatorLine<cr>g@$
+nnoremap <silent> <Plug>TComment-gcb :<c-u>if v:count > 0 \| call tcomment#SetOption("count", v:count) \| endif \| let w:tcommentPos = getpos(".") \| call tcomment#SetOption("mode_extra", "B") \| set opfunc=tcomment#OperatorLine<cr>g@
+xnoremap <Plug>TComment-gc :TCommentMaybeInline<cr>
+
+nnoremap <silent> <Plug>TComment-gc :<c-u>if v:count > 0 \| call tcomment#SetOption("count", v:count) \| endif \| let w:tcommentPos = getpos(".") \| set opfunc=tcomment#Operator<cr>g@
+
+for s:i in range(1, 9)
+    exec 'noremap <Plug>TComment-<c-_>' . s:i . ' :call tcomment#SetOption("count", '. s:i .')<cr>'
+    exec 'inoremap <Plug>TComment-<c-_>' . s:i . ' <c-\><c-o>:call tcomment#SetOption("count", '. s:i .')<cr>'
+    exec 'vnoremap <Plug>TComment-<c-_>' . s:i . ' :call tcomment#SetOption("count", '. s:i .')<cr>'
+endfor
+for s:i in range(1, 9)
+    exec 'nnoremap <silent> <Plug>TComment-gc' . s:i .'c :let w:tcommentPos = getpos(".") \| call tcomment#SetOption("count", '. s:i .') \| set opfunc=tcomment#Operator<cr>g@'
+endfor
+unlet s:i
+
 
 if g:tcommentMaps
     if g:tcommentMapLeader1 != ''
-        exec 'noremap <silent> '. g:tcommentMapLeader1 . g:tcommentMapLeader1 .' :TComment<cr>'
-        exec 'vnoremap <silent> '. g:tcommentMapLeader1 . g:tcommentMapLeader1 .' :TCommentMaybeInline<cr>'
-        exec 'inoremap <silent> '. g:tcommentMapLeader1 . g:tcommentMapLeader1 .' <c-o>:TComment<cr>'
-        exec 'noremap <silent> '. g:tcommentMapLeader1 .'p m`vip:TComment<cr>``'
-        exec 'inoremap <silent> '. g:tcommentMapLeader1 .'p <c-o>:norm! m`vip<cr>:TComment<cr><c-o>``'
-        exec 'noremap '. g:tcommentMapLeader1 .'<space> :TComment '
-        exec 'inoremap '. g:tcommentMapLeader1 .'<space> <c-o>:TComment '
-        exec 'inoremap <silent> '. g:tcommentMapLeader1 .'r <c-o>:TCommentRight<cr>'
-        exec 'noremap <silent> '. g:tcommentMapLeader1 .'r :TCommentRight<cr>'
-        exec 'vnoremap <silent> '. g:tcommentMapLeader1 .'i :TCommentInline<cr>'
-        exec 'noremap <silent> '. g:tcommentMapLeader1 .'i v:TCommentInline mode=I#<cr>'
-        exec 'inoremap <silent> '. g:tcommentMapLeader1 .'i <c-\><c-o>v:TCommentInline mode=#<cr>'
-        exec 'noremap '. g:tcommentMapLeader1 .'b :TCommentBlock<cr>'
-        exec 'inoremap '. g:tcommentMapLeader1 .'b <c-o>:TCommentBlock<cr>'
-        exec 'noremap '. g:tcommentMapLeader1 .'a :TCommentAs '
-        exec 'inoremap '. g:tcommentMapLeader1 .'a <c-o>:TCommentAs '
-        exec 'noremap '. g:tcommentMapLeader1 .'n :TCommentAs <c-r>=&ft<cr> '
-        exec 'inoremap '. g:tcommentMapLeader1 .'n <c-o>:TCommentAs <c-r>=&ft<cr> '
-        exec 'noremap '. g:tcommentMapLeader1 .'s :TCommentAs <c-r>=&ft<cr>_'
-        exec 'inoremap '. g:tcommentMapLeader1 .'s <c-o>:TCommentAs <c-r>=&ft<cr>_'
-        exec 'noremap <silent> '. g:tcommentMapLeader1 .'cc :<c-u>call tcomment#SetOption("count", v:count1)<cr>'
-        exec 'noremap '. g:tcommentMapLeader1 .'ca :<c-u>call tcomment#SetOption("as", input("Comment as: ", &filetype, "customlist,tcomment#Complete"))<cr>'
+        exec 'map '. g:tcommentMapLeader1 . g:tcommentMapLeader1 .' <Plug>TComment-<c-_><c-_>'
+        exec 'vmap '. g:tcommentMapLeader1 . g:tcommentMapLeader1 .' <Plug>TComment-<c-_><c-_>'
+        exec 'imap '. g:tcommentMapLeader1 . g:tcommentMapLeader1 .' <Plug>TComment-<c-_><c-_>'
+        exec 'map '. g:tcommentMapLeader1 .'p <Plug>TComment-<c-_>p'
+        exec 'imap '. g:tcommentMapLeader1 .'p <Plug>TComment-<c-_>p'
+        exec 'map '. g:tcommentMapLeader1 .'<space> <Plug>TComment-<c-_><space>'
+        exec 'imap '. g:tcommentMapLeader1 .'<space> <Plug>TComment-<c-_><space>'
+        exec 'imap '. g:tcommentMapLeader1 .'r <Plug>TComment-<c-_>r'
+        exec 'map '. g:tcommentMapLeader1 .'r <Plug>TComment-<c-_>r'
+        exec 'vmap '. g:tcommentMapLeader1 .'i <Plug>TComment-<c-_>i'
+        exec 'map '. g:tcommentMapLeader1 .'i <Plug>TComment-<c-_>i'
+        exec 'imap '. g:tcommentMapLeader1 .'i <Plug>TComment-<c-_>i'
+        exec 'map '. g:tcommentMapLeader1 .'b <Plug>TComment-<c-_>b'
+        exec 'imap '. g:tcommentMapLeader1 .'b <Plug>TComment-<c-_>b'
+        exec 'map '. g:tcommentMapLeader1 .'a <Plug>TComment-<c-_>a'
+        exec 'imap '. g:tcommentMapLeader1 .'a <Plug>TComment-<c-_>a'
+        exec 'map '. g:tcommentMapLeader1 .'n <Plug>TComment-<c-_>n'
+        exec 'imap '. g:tcommentMapLeader1 .'n <Plug>TComment-<c-_>n'
+        exec 'map '. g:tcommentMapLeader1 .'s <Plug>TComment-<c-_>s'
+        exec 'imap '. g:tcommentMapLeader1 .'s <Plug>TComment-<c-_>s'
+        exec 'map '. g:tcommentMapLeader1 .'cc <Plug>TComment-<c-_>cc'
+        exec 'map '. g:tcommentMapLeader1 .'ca <Plug>TComment-<c-_>ca'
         for s:i in range(1, 9)
-            exec 'noremap <silent> '. g:tcommentMapLeader1 . s:i .' :TComment count='. s:i .'<cr>'
-            exec 'inoremap <silent> '. g:tcommentMapLeader1 . s:i .' <c-\><c-o>:TComment count='. s:i .'<cr>'
-            exec 'vnoremap <silent> '. g:tcommentMapLeader1 . s:i .' :TCommentMaybeInline count='. s:i .'<cr>'
+            exec 'map '. g:tcommentMapLeader1 . s:i .' <Plug>TComment-<c-_>'.s:i
+            exec 'imap '. g:tcommentMapLeader1 . s:i .' <Plug>TComment-<c-_>'.s:i
+            exec 'vmap '. g:tcommentMapLeader1 . s:i .' <Plug>TComment-<c-_>'.s:i
         endfor
         unlet s:i
     endif
     if g:tcommentMapLeader2 != ''
-        exec 'noremap <silent> '. g:tcommentMapLeader2 .'_ :TComment<cr>'
-        exec 'xnoremap <silent> '. g:tcommentMapLeader2 .'_ :TCommentMaybeInline<cr>'
-        exec 'noremap <silent> '. g:tcommentMapLeader2 .'p vip:TComment<cr>'
-        exec 'noremap '. g:tcommentMapLeader2 .'<space> :TComment '
-        exec 'xnoremap <silent> '. g:tcommentMapLeader2 .'i :TCommentInline<cr>'
-        exec 'noremap <silent> '. g:tcommentMapLeader2 .'r :TCommentRight<cr>'
-        exec 'noremap '. g:tcommentMapLeader2 .'b :TCommentBlock<cr>'
-        exec 'noremap '. g:tcommentMapLeader2 .'a :TCommentAs '
-        exec 'noremap '. g:tcommentMapLeader2 .'n :TCommentAs <c-r>=&ft<cr> '
-        exec 'noremap '. g:tcommentMapLeader2 .'s :TCommentAs <c-r>=&ft<cr>_'
+        exec 'map '. g:tcommentMapLeader2 .'_ <Plug>TComment-<Leader>__'
+        exec 'xmap '. g:tcommentMapLeader2 .'_ <Plug>TComment-<Leader>__'
+        exec 'map '. g:tcommentMapLeader2 .'p <Plug>TComment-<Leader>_p'
+        exec 'map '. g:tcommentMapLeader2 .'<space> <Plug>TComment-<Leader>_<space>'
+        exec 'xmap '. g:tcommentMapLeader2 .'i <Plug>TComment-<Leader>_i'
+        exec 'map '. g:tcommentMapLeader2 .'r <Plug>TComment-<Leader>_r'
+        exec 'map '. g:tcommentMapLeader2 .'b <Plug>TComment-<Leader>_b'
+        exec 'map '. g:tcommentMapLeader2 .'a <Plug>TComment-<Leader>_a'
+        exec 'map '. g:tcommentMapLeader2 .'n <Plug>TComment-<Leader>_n'
+        exec 'map '. g:tcommentMapLeader2 .'s <Plug>TComment-<Leader>_s'
     endif
     if g:tcommentMapLeaderOp1 != ''
-        exec 'nnoremap <silent> '. g:tcommentMapLeaderOp1 .' :<c-u>if v:count > 0 \| call tcomment#SetOption("count", v:count) \| endif \| let w:tcommentPos = getpos(".") \| set opfunc=tcomment#Operator<cr>g@'
+        exec 'nmap <silent> '. g:tcommentMapLeaderOp1 .' <Plug>TComment-gc'
         for s:i in range(1, 9)
-            exec 'nnoremap <silent> '. g:tcommentMapLeaderOp1 . s:i .'c :let w:tcommentPos = getpos(".") \| call tcomment#SetOption("count", '. s:i .') \| set opfunc=tcomment#Operator<cr>g@'
+            exec 'nmap <silent> '. g:tcommentMapLeaderOp1 . s:i .' <Plug>TComment-gc'.s:i
         endfor
         unlet s:i
-        exec 'nnoremap <silent> '. g:tcommentMapLeaderOp1 .'c :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#OperatorLine<cr>g@$'
-        exec 'nnoremap <silent> '. g:tcommentMapLeaderOp1 .'b :let w:tcommentPos = getpos(".") \| call tcomment#SetOption("mode_extra", "B") \| set opfunc=tcomment#OperatorLine<cr>g@'
-        exec 'xnoremap <silent> '. g:tcommentMapLeaderOp1 .' :TCommentMaybeInline<cr>'
+        exec 'nmap <silent> '. g:tcommentMapLeaderOp1 .'c <Plug>TComment-gcc'
+        exec 'nmap <silent> '. g:tcommentMapLeaderOp1 .'b <Plug>TComment-gcb'
+        exec 'xmap '. g:tcommentMapLeaderOp1 .' <Plug>TComment-gc'
     endif
-    if g:tcommentMapLeaderOp2 != ''
-        exec 'nnoremap <silent> '. g:tcommentMapLeaderOp2 .' :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#OperatorAnyway<cr>g@'
-        exec 'nnoremap <silent> '. g:tcommentMapLeaderOp2 .'c :let w:tcommentPos = getpos(".") \| set opfunc=tcomment#OperatorLineAnyway<cr>g@$'
-        exec 'nnoremap <silent> '. g:tcommentMapLeaderOp2 .'b :let w:tcommentPos = getpos(".") \| call tcomment#SetOption("mode_extra", "B") \| set opfunc=tcomment#OperatorLine<cr>g@'
-        exec 'xnoremap <silent> '. g:tcommentMapLeaderOp2 .' :TCommentMaybeInline!<cr>'
+   if g:tcommentMapLeaderOp2 != ''
+        exec 'nmap <silent> '. g:tcommentMapLeaderOp2 .' <Plug>TComment-gC'
+        exec 'nmap <silent> '. g:tcommentMapLeaderOp2 .'c <Plug>TComment-gCc'
+        exec 'nmap <silent> '. g:tcommentMapLeaderOp2 .'b <Plug>TComment-gCb'
+        exec 'xmap '. g:tcommentMapLeaderOp2 .' <Plug>TComment-gC'
     endif
     if g:tcommentTextObjectInlineComment != ''
-        exec 'vnoremap' g:tcommentTextObjectInlineComment ':<c-U>silent call tcomment#TextObjectInlineComment()<cr>'
-        exec 'omap' g:tcommentTextObjectInlineComment ':normal v'. g:tcommentTextObjectInlineComment .'<cr>'
+        exec 'vmap' g:tcommentTextObjectInlineComment ' <Plug>TComment-ic'
+        exec 'omap' g:tcommentTextObjectInlineComment ' <Plug>TComment-ic'
     endif
 endif
 
+
+let &cpo = s:save_cpo
+unlet s:save_cpo
 " vi: ft=vim:tw=72:ts=4:fo=w2croql
