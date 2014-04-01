@@ -3,7 +3,7 @@
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     2007-09-17.
 " @Last Change: 2014-02-05.
-" @Revision:    1552
+" @Revision:    1572
 
 " call tlog#Log('Load: '. expand('<sfile>')) " vimtlib-sfile
 
@@ -300,10 +300,16 @@ function! tcomment#DefineType(name, commentdef, ...)
     let s:types_dirty = 1
 endf
 
-" :nodoc:
-" Return comment definition
-function! tcomment#GetCommentDef(name)
-    return get(s:definitions, a:name, "")
+" Return the comment definition for NAME.
+"                                                       *b:tcomment_def_{NAME}*
+" Return b:tcomment_def_{NAME} if the variable exists. Otherwise return 
+" the comment definition as set with |tcomment#DefineType|.
+function! tcomment#GetCommentDef(name, ...)
+    if exists('b:tcomment_def_'. a:name)
+        return b:tcomment_def_{a:name}
+    else
+        return get(s:definitions, a:name, a:0 >= 1 ? a:1 : '')
+    endif
 endf
 
 " :nodoc:
@@ -605,7 +611,17 @@ function! tcomment#Comment(beg, end, ...)
     " TLogVAR cursor_pos
     let s:cursor_pos = []
     if comment_mode =~# 'i'
-        let comment_mode = substitute(comment_mode, '\Ci', line("'<") == line("'>") ? 'I' : 'G', 'g')
+        let blnum = line("'<")
+        if blnum == line("'>")
+            if virtcol('.') <= indent(blnum)
+                let i_mode = 'G'
+            else
+                let i_mode = 'I'
+            endif
+        else
+            let i_mode = 'G'
+        endif
+        let comment_mode = substitute(comment_mode, '\Ci', i_mode, 'g')
         " TLogVAR 1, comment_mode
     endif
     let [lbeg, cbeg, lend, cend] = s:GetStartEnd(a:beg, a:end, comment_mode)
@@ -820,7 +836,7 @@ function! s:GetStartEnd(beg, end, comment_mode) "{{{3
             let cbeg = virtcol('.')
             let cend = virtcol('$')
             let comment_mode = substitute(comment_mode, '\CR', 'G', 'g')
-            " TLogVAR "R", cbeg, cend, comment_mode
+            " TLogVAR 'R', cbeg, cend, comment_mode
         elseif comment_mode =~# 'I'
             let cbeg = virtcol("'<")
             if cbeg == 0
@@ -831,15 +847,17 @@ function! s:GetStartEnd(beg, end, comment_mode) "{{{3
                 let cend += 1
                 " TLogVAR cend, virtcol('$')
             endif
-            " TLogVAR "I", cbeg, cend, comment_mode
+            " TLogVAR 'I', cbeg, cend, comment_mode
         else
             let cbeg = -1
             let cend = 0
             for lnum in range(a:beg, a:end)
                 let indentwidth = indent(lnum)
-                " TLogVAR lnum, indentwidth, getline(lnum)
+                " TLogVAR cbeg, lnum, indentwidth, getline(lnum)
                 if cbeg == -1 || indentwidth < cbeg
-                    let cbeg = indentwidth
+                    if indentwidth != 0 || getline(lnum) =~ '\S'
+                        let cbeg = indentwidth
+                    endif
                 endif
             endfor
             if cbeg == -1
@@ -1887,10 +1905,10 @@ function! s:GuessCustomCommentString(ft, comment_mode, ...)
     let default_supports_comment_mode = get(default_cdef, 'comment_mode', custom_comment_mode)
     " TLogVAR default, default_supports_comment_mode
     if comment_mode =~# '[IB]' && !empty(custom_comment_mode)
-        let def = s:definitions[custom_comment_mode]
+        let def = tcomment#GetCommentDef(custom_comment_mode)
         " TLogVAR 1, def
     elseif !empty(custom_comment)
-        let def = s:definitions[custom_comment]
+        let def = tcomment#GetCommentDef(custom_comment)
         let comment_mode = s:GuessCommentMode(comment_mode, supported_comment_mode)
         " TLogVAR 3, def, comment_mode
     elseif !empty(default)
