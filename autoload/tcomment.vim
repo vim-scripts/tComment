@@ -2,8 +2,8 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     2007-09-17.
-" @Last Change: 2014-02-05.
-" @Revision:    1587
+" @Last Change: 2014-06-25.
+" @Revision:    1656
 
 " call tlog#Log('Load: '. expand('<sfile>')) " vimtlib-sfile
 
@@ -48,13 +48,15 @@ if !exists('g:tcommentOptions')
 endif
 
 if !exists('g:tcomment#options_comments')
-    " Options when using a the 'comments' option.
-    let g:tcomment#options_comments = {'whitespace': 'both'}   "{{{2
+    " Additional args for |tcomment#Comment()| when using the 'comments' 
+    " option.
+    let g:tcomment#options_comments = {'whitespace': get(g:tcommentOptions, 'whitespace', 'both')}   "{{{2
 endif
 
 if !exists('g:tcomment#options_commentstring')
-    " Options when using a the 'commentstring' option.
-    let g:tcomment#options_commentstring = {'whitespace': 'both'}   "{{{2
+    " Additional args for |tcomment#Comment()| when using the 
+    " 'commentstring' option.
+    let g:tcomment#options_commentstring = {'whitespace': get(g:tcommentOptions, 'whitespace', 'both')}   "{{{2
 endif
 
 if !exists('g:tcomment#ignore_char_type')
@@ -252,6 +254,22 @@ if !exists('g:tcomment#ignore_comment_def')
     let g:tcomment#ignore_comment_def = []   "{{{2
 endif
 
+if !exists('g:tcomment#must_escape_expression_backslash')
+    " Users of vim earlier than 7.3 might have to set this variable to 
+    " true. Set this variable to 0, if you see unexpected "\r" char 
+    " sequences in comments.
+    "
+    " The reommended value was `!(v:version > 702 || (v:version == 702 && has('patch407')))`.
+    " It is now assumed though, that no unpatched versions of vim are in 
+    " use.
+    "
+    " References:
+    " Patch 7.2.407  when using :s with an expression backslashes are dropped
+    " https://github.com/tomtom/tcomment_vim/issues/102
+    let g:tcomment#must_escape_expression_backslash = 0   "{{{2
+endif
+
+
 let s:types_dirty = 1
 
 let s:definitions = {}
@@ -330,6 +348,7 @@ call tcomment#DefineType('ada',              '-- %s'            )
 call tcomment#DefineType('apache',           '# %s'             )
 call tcomment#DefineType('asciidoc',         '// %s'            )
 call tcomment#DefineType('asm',              '; %s'             )
+call tcomment#DefineType('asterisk',         '; %s'             )
 call tcomment#DefineType('blade',            '{{-- %s --}}'     )
 call tcomment#DefineType('blade_block',      '{{-- %s --}}'     )
 call tcomment#DefineType('blade_inline',     '{{-- %s --}}'     )
@@ -347,6 +366,7 @@ call tcomment#DefineType('clojurescript_inline', '; %s'         )
 call tcomment#DefineType('cmake',            '# %s'             )
 call tcomment#DefineType('coffee',           '# %s'             )
 call tcomment#DefineType('conf',             '# %s'             )
+call tcomment#DefineType('context',          '%% %s'            )
 call tcomment#DefineType('conkyrc',          '# %s'             )
 call tcomment#DefineType('cpp',              '// %s'            )
 call tcomment#DefineType('cpp_block',        g:tcommentBlockC   )
@@ -371,6 +391,7 @@ call tcomment#DefineType('dsl',              '; %s'             )
 call tcomment#DefineType('dustjs',           '{! %s !}'         )
 call tcomment#DefineType('dylan',            '// %s'            )
 call tcomment#DefineType('eiffel',           '-- %s'            )
+call tcomment#DefineType('elixir',           '# %s'             )
 call tcomment#DefineType('erlang',           '%%%% %s'          )
 call tcomment#DefineType('eruby',            '<%%# %s'          )
 call tcomment#DefineType('esmtprc',          '# %s'             )
@@ -402,6 +423,7 @@ call tcomment#DefineType('htmljinja_block', "{%% comment %%}%s{%% endcomment %%}
 call tcomment#DefineType('hy',               '; %s'             )
 call tcomment#DefineType('ini',              '; %s'             ) " php ini (/etc/php5/...)
 call tcomment#DefineType('io',               '// %s'            )
+call tcomment#DefineType('jade',             '// %s'            )
 call tcomment#DefineType('jasmine',          '# %s'             )
 call tcomment#DefineType('java',             '/* %s */'         )
 call tcomment#DefineType('java_block',       g:tcommentBlockC   )
@@ -427,6 +449,7 @@ call tcomment#DefineType('msidl',            '// %s'            )
 call tcomment#DefineType('msidl_block',      g:tcommentBlockC   )
 call tcomment#DefineType('nginx',            '# %s'             )
 call tcomment#DefineType('nroff',            '.\\" %s'          )
+call tcomment#DefineType('noweb',            '%% %s'            )
 call tcomment#DefineType('nsis',             '# %s'             )
 call tcomment#DefineType('objc',             '/* %s */'         )
 call tcomment#DefineType('objc_block',       g:tcommentBlockC   )
@@ -449,6 +472,9 @@ call tcomment#DefineType('php_inline',       g:tcommentInlineC  )
 call tcomment#DefineType('po',               '# %s'             )
 call tcomment#DefineType('prolog',           '%% %s'            )
 call tcomment#DefineType('puppet',           '# %s'             )
+call tcomment#DefineType('purescript',       '-- %s'            )
+call tcomment#DefineType('purescript_block', "{-%s-}\n   "      )
+call tcomment#DefineType('purescript_inline','{- %s -}'         )
 call tcomment#DefineType('python',           '# %s'             )
 call tcomment#DefineType('qml',              '// %s'            )
 call tcomment#DefineType('r',                '# %s'             )
@@ -588,11 +614,14 @@ let s:null_comment_string    = '%s'
 " comment_mode (see also ¦g:tcommentModeExtra¦):
 "   G ... guess the value of comment_mode
 "   B ... block (use extra lines for the comment markers)
+"   L ... lines
 "   i ... maybe inline, guess
 "   I ... inline
 "   R ... right (comment the line right of the cursor)
 "   v ... visual
 "   o ... operator
+"   C ... force comment
+"   U ... force uncomment (if U and C are present, U wins)
 " By default, each line in range will be commented by adding the comment 
 " prefix and postfix.
 function! tcomment#Comment(beg, end, ...)
@@ -634,9 +663,11 @@ function! tcomment#Comment(beg, end, ...)
         endif
         " TLogVAR comment_mode
     endif
-    if exists('s:temp_options') && has_key(s:temp_options, 'mode_extra')
-        let comment_mode = s:AddModeExtra(comment_mode, s:temp_options.mode_extra, lbeg, lend)
-        " TLogVAR comment_mode
+    let mode_extra = s:GetTempOption('mode_extra', '')
+    " TLogVAR mode_extra
+    if !empty(mode_extra)
+        let comment_mode = s:AddModeExtra(comment_mode, mode_extra, lbeg, lend)
+        " TLogVAR "mode_extra", comment_mode
         unlet s:temp_options.mode_extra
     endif
     " get the correct commentstring
@@ -698,10 +729,10 @@ function! tcomment#Comment(beg, end, ...)
     " echom "DBG" string(a:000)
     let cms0 = s:BlockGetCommentRx(cdef)
     " TLogVAR cms0
-    " make whitespace optional; this conflicts with comments that require some 
-    " whitespace
+    "" make whitespace optional; this conflicts with comments that require some 
+    "" whitespace
     let cmt_check = substitute(cms0, '\([	 ]\)', '\1\\?', 'g')
-    " turn commentstring into a search pattern
+    "" turn commentstring into a search pattern
     " TLogVAR cmt_check
     let cmt_check = printf(cmt_check, '\(\_.\{-}\)')
     " TLogVAR cdef, cmt_check
@@ -712,9 +743,12 @@ function! tcomment#Comment(beg, end, ...)
     " echom "DBG" string(s:cdef)
     let cbeg = get(s:cdef, 'col', cbeg)
     " TLogVAR cbeg
-    if comment_anyway
+    if mode_extra =~# 'U'
+        let uncomment = 1
+    elseif mode_extra =~# 'C' || comment_anyway
         let uncomment = 0
     endif
+    " TLogVAR comment_anyway, mode_extra, uncomment
     " go
     " TLogVAR comment_mode
     if comment_mode =~# 'B'
@@ -803,6 +837,15 @@ else
         return strlen(substitute(a:string, ".", "x", "g"))
     endf
 endif
+
+
+function! s:GetTempOption(name, default) "{{{3
+    if exists('s:temp_options') && has_key(s:temp_options, a:name)
+        return s:temp_options[a:name]
+    else
+        return a:default
+    endif
+endf
 
 
 function! tcomment#SetOption(name, arg) "{{{3
@@ -1063,7 +1106,7 @@ endf
 
 function! tcomment#OperatorLine(type) "{{{3
     " TLogVAR a:type
-    call tcomment#Operator('line', 'G')
+    call tcomment#Operator('line', 'L')
 endf
 
 
@@ -1075,7 +1118,7 @@ endf
 
 function! tcomment#OperatorLineAnyway(type) "{{{3
     " TLogVAR a:type
-    call tcomment#Operator('line', 'G', '!')
+    call tcomment#Operator('line', 'L', '!')
 endf
 
 
@@ -1235,12 +1278,12 @@ function! s:StartPosRx(comment_mode, line, col)
 endf
 
 
-function! s:EndPosRx(comment_mode, line, col)
-    " TLogVAR a:comment_mode, a:line, a:col
+function! s:EndPosRx(comment_mode, lnum, col)
+    " TLogVAR a:comment_mode, a:lnum, a:col
     " if a:comment_mode =~# 'I'
-    "     return s:EndLineRx(a:line) . s:EndColRx(a:col)
+    "     return s:EndLineRx(a:lnum) . s:EndColRx(a:col)
     " else
-        return s:EndColRx(a:comment_mode, a:col)
+        return s:EndColRx(a:comment_mode, a:lnum, a:col)
     " endif
 endf
 
@@ -1276,9 +1319,12 @@ function! s:StartColRx(comment_mode, col, ...)
 endf
 
 
-function! s:EndColRx(comment_mode, pos)
-    " TLogVAR a:comment_mode, a:pos
-    if a:pos == 0
+function! s:EndColRx(comment_mode, lnum, pos)
+    " TLogVAR a:comment_mode, a:lnum, a:pos
+    let line = getline(a:lnum)
+    let cend = s:Strdisplaywidth(line)
+    " TLogVAR cend
+    if a:pos == 0 || a:pos >= cend
         return '\$'
     else
         if a:comment_mode =~? 'i' && a:comment_mode =~# 'o'
@@ -1302,7 +1348,7 @@ function! s:CommentDef(beg, end, checkRx, comment_mode, cbeg, cend)
     else
         let mdrx = '\V'. s:StartColRx(a:comment_mode, a:cbeg) .'\s\*'
     endif
-    let mdrx .= a:checkRx .'\s\*'. s:EndColRx(a:comment_mode, 0)
+    let mdrx .= a:checkRx .'\s\*'. s:EndColRx(a:comment_mode, a:end, 0)
     " let mdrx = '\V'. s:StartPosRx(a:comment_mode, beg, a:cbeg) .'\s\*'. a:checkRx .'\s\*'. s:EndPosRx(a:comment_mode, end, 0)
     " TLogVAR mdrx
     let line = getline(beg)
@@ -1396,10 +1442,10 @@ function! s:ProcessLine(uncomment, match, checkRx, replace)
             endif
         endif
         " TLogVAR rv
-        if v:version > 702 || (v:version == 702 && has('patch407'))
-            let rv = escape(rv, "\r")
-        else
+        if g:tcomment#must_escape_expression_backslash
             let rv = escape(rv, "\\r")
+        else
+            let rv = escape(rv, "\r")
         endif
         " TLogVAR rv
         " let rv = substitute(rv, '\n', '\\\n', 'g')
@@ -1482,8 +1528,10 @@ function! s:CommentBlock(beg, end, cbeg, cend, comment_mode, uncomment, checkRx,
         if a:uncomment
             let @t = substitute(@t, '\V\^\s\*'. a:checkRx .'\$', '\1', '')
             let tt = []
-            let rx = '\V'. s:StartColRx(a:comment_mode, a:cbeg) . '\zs\s\*'. mx
-            " TLogVAR rx
+            " TODO: Correctly handle foreign comments with inconsistent 
+            " whitespace around mx markers
+            let rx = '\V'. s:StartColRx(a:comment_mode, a:cbeg) . '\zs'. mx
+            " TLogVAR mx1, rx
             for line in split(@t, '\n')
                 let line1 = substitute(line, rx, '', 'g')
                 call add(tt, line1)
@@ -1907,7 +1955,7 @@ function! s:GuessCustomCommentString(ft, comment_mode, ...)
     let default_cdef = a:0 >= 2 ? a:2 : {}
     let default_supports_comment_mode = get(default_cdef, 'comment_mode', custom_comment_mode)
     " TLogVAR default, default_supports_comment_mode
-    if comment_mode =~# '[IB]' && !empty(custom_comment_mode)
+    if comment_mode =~# '[ILB]' && !empty(custom_comment_mode)
         let def = tcomment#GetCommentDef(custom_comment_mode)
         " TLogVAR 1, def
     elseif !empty(custom_comment)
