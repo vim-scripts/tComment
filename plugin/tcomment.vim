@@ -2,7 +2,7 @@
 " @Author:      Tom Link (micathom AT gmail com)
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     27-Dez-2004.
-" @Last Change: 2015-03-14.
+" @Last Change: 2015-04-26.
 " @Revision:    964
 " GetLatestVimScripts: 1173 1 tcomment.vim
 
@@ -162,7 +162,7 @@ noremap <Plug>TComment_<Leader>_s :TCommentAs <c-r>=&ft<cr>_
 "     call call(g:tcomment_op, [a:type])
 " endf
 
-function! s:MapOp(name, count, extra, op, invoke) "{{{3
+function! s:MapOp(name, extra, op, invoke) "{{{3
     let opfunc = 'TCommentOpFunc_'. substitute(a:name, '[^a-zA-Z0-9_]', '_', 'G')
     let fn = [
                 \ 'function! '. opfunc .'(...)',
@@ -171,14 +171,7 @@ function! s:MapOp(name, count, extra, op, invoke) "{{{3
                 \ 'return call('. string(a:op) .', a:000)',
                 \ 'endf'
                 \ ]
-    let t = @t
-    try
-        let @t = join(fn, "\n")
-        @t
-    finally
-        let @t = t
-    endtry
-    let extra = empty(a:extra) ? '' : ' \| '. a:extra
+    exec join(fn, "\n")
     exec printf('nnoremap <silent> <Plug>TComment_%s '.
                 \ ':<c-u>call tcomment#ResetOption() \| if v:count > 0 \| call tcomment#SetOption("count", v:count) \| endif \| let w:tcommentPos = getpos(".") \|'.
                 \ 'set opfunc=%s<cr>%s',
@@ -186,24 +179,24 @@ function! s:MapOp(name, count, extra, op, invoke) "{{{3
 endf
 
 
-call s:MapOp('Uncomment',  '', 'call tcomment#SetOption("mode_extra", "U")', 'tcomment#Operator', 'g@')
-call s:MapOp('Uncommentc', '', 'call tcomment#SetOption("mode_extra", "U")', 'tcomment#OperatorLine', 'g@$')
-call s:MapOp('Uncommentb', '', 'call tcomment#SetOption("mode_extra", "UB")', 'tcomment#OperatorLine', 'g@')
+call s:MapOp('Uncomment',  'call tcomment#SetOption("mode_extra", "U")', 'tcomment#Operator', 'g@')
+call s:MapOp('Uncommentc', 'call tcomment#SetOption("mode_extra", "U")', 'tcomment#OperatorLine', 'g@$')
+call s:MapOp('Uncommentb', 'call tcomment#SetOption("mode_extra", "UB")', 'tcomment#OperatorLine', 'g@')
 xnoremap <silent> <Plug>TComment_Uncomment :<c-u>if v:count > 0 \| call tcomment#SetOption("count", v:count) \| endif \| call tcomment#SetOption("mode_extra", "U") \| '<,'>TCommentMaybeInline<cr>
 
-call s:MapOp('Comment',  '', '', 'tcomment#OperatorAnyway', 'g@')
-call s:MapOp('Commentc', '', '', 'tcomment#OperatorLineAnyway', 'g@$')
-call s:MapOp('Commentb', '', 'call tcomment#SetOption("mode_extra", "B")', 'tcomment#OperatorLine', 'g@')
+call s:MapOp('Comment',  '', 'tcomment#OperatorAnyway', 'g@')
+call s:MapOp('Commentc', '', 'tcomment#OperatorLineAnyway', 'g@$')
+call s:MapOp('Commentb', 'call tcomment#SetOption("mode_extra", "B")', 'tcomment#OperatorLine', 'g@')
 xnoremap <silent> <Plug>TComment_Comment :<c-u>if v:count > 0 \| call tcomment#SetOption("count", v:count) \| endif \| '<,'>TCommentMaybeInline!<cr>
 
 vnoremap <Plug>TComment_ic :<c-U>call tcomment#TextObjectInlineComment()<cr>
 noremap <Plug>TComment_ic :<c-U>call tcomment#TextObjectInlineComment()<cr>
 
-call s:MapOp('gcc', '', '', 'tcomment#OperatorLine', 'g@$')
-call s:MapOp('gcb', '', 'call tcomment#SetOption("mode_extra", "B")', 'tcomment#OperatorLine', 'g@')
+call s:MapOp('gcc', '', 'tcomment#OperatorLine', 'g@$')
+call s:MapOp('gcb', 'call tcomment#SetOption("mode_extra", "B")', 'tcomment#OperatorLine', 'g@')
 xnoremap <Plug>TComment_gc :TCommentMaybeInline<cr>
 
-call s:MapOp('gc', '', '', 'tcomment#Operator', 'g@')
+call s:MapOp('gc', '', 'tcomment#Operator', 'g@')
 
 for s:i in range(1, 9)
     exec 'noremap <Plug>TComment_<c-_>' . s:i . ' :call tcomment#SetOption("count", '. s:i .')<cr>'
@@ -211,7 +204,7 @@ for s:i in range(1, 9)
     exec 'vnoremap <Plug>TComment_<c-_>' . s:i . ' :call tcomment#SetOption("count", '. s:i .')<cr>'
 endfor
 for s:i in range(1, 9)
-    call s:MapOp('gc' . s:i .'c', s:i, '', 'tcomment#Operator', 'g@')
+    call s:MapOp('gc' . s:i .'c', 'call tcomment#SetOption("count", '. s:i .')', 'tcomment#Operator', 'g@')
 endfor
 unlet s:i
 

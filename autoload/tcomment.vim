@@ -2,8 +2,8 @@
 " @Website:     http://www.vim.org/account/profile.php?user_id=4037
 " @License:     GPL (see http://www.gnu.org/licenses/gpl.txt)
 " @Created:     2007-09-17.
-" @Last Change: 2015-03-13.
-" @Revision:    1760
+" @Last Change: 2015-09-30.
+" @Revision:    1781
 
 " call tlog#Log('Load: '. expand('<sfile>')) " vimtlib-sfile
 
@@ -40,10 +40,14 @@ endif
 if !exists('g:tcommentOptions')
     " Other key-value options used by |tcomment#Comment()|.
     "
-    " Example: If you want to put the opening comment marker always in 
-    " the first column regardless of the block's indentation, put this 
-    " into your |vimrc| file: >
+    " Examples:
+    " Put the opening comment marker always in the first column 
+    " regardless of the block's indentation, put this into your |vimrc| 
+    " file: >
     "   let g:tcommentOptions = {'col': 1}
+    "
+    " Indent uncommented lines: >
+    "   let g:tcommentOptions = {'postprocess_uncomment': 'norm! %sgg=%sgg'}
     let g:tcommentOptions = {}   "{{{2
 endif
 
@@ -110,6 +114,9 @@ if !exists("g:tcommentGuessFileType_django")
 endif
 if !exists("g:tcommentGuessFileType_eruby")
     let g:tcommentGuessFileType_eruby = 1   "{{{2
+endif
+if !exists("g:tcommentGuessFileType_jinja")
+    let g:tcommentGuessFileType_jinja = 'html'   "{{{2
 endif
 if !exists("g:tcommentGuessFileType_smarty")
     let g:tcommentGuessFileType_smarty = 1   "{{{2
@@ -418,6 +425,7 @@ call tcomment#DefineType('erlang',           '%%%% %s'          )
 call tcomment#DefineType('eruby',            '<%%# %s'          )
 call tcomment#DefineType('esmtprc',          '# %s'             )
 call tcomment#DefineType('expect',           '# %s'             )
+call tcomment#DefineType('fish',             '# %s'             )
 call tcomment#DefineType('form',             {'commentstring': '* %s', 'col': 1})
 call tcomment#DefineType('fstab',            '# %s'             )
 call tcomment#DefineType('gitconfig',        '# %s'             )
@@ -448,13 +456,18 @@ call tcomment#DefineType('ini',              '; %s'             ) " php ini (/et
 call tcomment#DefineType('io',               '// %s'            )
 call tcomment#DefineType('jade',             '// %s'            )
 call tcomment#DefineType('jasmine',          '# %s'             )
-call tcomment#DefineType('java',             tcomment#GetLineC())
+call tcomment#DefineType('java',             tcomment#GetLineC('// %s'))
 call tcomment#DefineType('java_block',       g:tcommentBlockC   )
 call tcomment#DefineType('java_doc_block',   g:tcommentBlockC2  )
 call tcomment#DefineType('java_inline',      g:tcommentInlineC  )
 call tcomment#DefineType('javascript',       tcomment#GetLineC('// %s'))
 call tcomment#DefineType('javascript_block', g:tcommentBlockC   )
 call tcomment#DefineType('javascript_inline', g:tcommentInlineC )
+call tcomment#DefineType('jsx',             '{/* %s */}')
+call tcomment#DefineType('jsx_block',       '{/* %s */}')
+call tcomment#DefineType('jsx_inline',      '{/* %s */}')
+call tcomment#DefineType('jinja',           '{# %s #}'     )
+call tcomment#DefineType('jinja_block',     "{%% comment %%}%s{%% endcomment %%}\n ")
 call tcomment#DefineType('jproperties',      '# %s'             )
 call tcomment#DefineType('lilypond',         '%% %s'            )
 call tcomment#DefineType('lisp',             '; %s'             )
@@ -467,6 +480,10 @@ call tcomment#DefineType('lua_inline',       '--[[%s --]]'      )
 call tcomment#DefineType('lynx',             '# %s'             )
 call tcomment#DefineType('m4',               'dnl %s'           )
 call tcomment#DefineType('mail',             '> %s'             )
+call tcomment#DefineType('make',             '# %s'             )
+call tcomment#DefineType('markdown_block',   "<!---%s--->\n  "  )
+call tcomment#DefineType('markdown.pandoc',  '<!--- %s --->'    )
+call tcomment#DefineType('markdown.pandoc_block', "<!---%s--->\n  ")
 call tcomment#DefineType('matlab',           '%% %s'            )
 call tcomment#DefineType('monkey',           ''' %s'            )
 call tcomment#DefineType('msidl',            '// %s'            )
@@ -508,7 +525,10 @@ call tcomment#DefineType('rc',               '// %s'            )
 call tcomment#DefineType('readline',         '# %s'             )
 call tcomment#DefineType('remind',           {'commentstring_rx': '\[;#] %s', 'commentstring': '# %s'})
 call tcomment#DefineType('resolv',           '# %s'             )
+call tcomment#DefineType('robot', {'col': 1, 'commentstring': '# %s'})
 call tcomment#DefineType('robots',           '# %s'             )
+call tcomment#DefineType('rust',             tcomment#GetLineC('// %s'))
+call tcomment#DefineType('rust_block',       g:tcommentBlockC   )
 call tcomment#DefineType('ruby',             '# %s'             )
 call tcomment#DefineType('ruby_3',           '### %s'           )
 call tcomment#DefineType('ruby_block',       "=begin rdoc%s=end")
@@ -545,6 +565,7 @@ call tcomment#DefineType('tcl',              '# %s'             )
 call tcomment#DefineType('tex',              '%% %s'            )
 call tcomment#DefineType('toml',             '# %s'             )
 call tcomment#DefineType('tpl',              '<!-- %s -->'      )
+call tcomment#DefineType('tup',              '# %s'             )
 call tcomment#DefineType('typoscript',       '# %s'             )
 call tcomment#DefineType('upstart',          '# %s'             )
 call tcomment#DefineType('vader',            {'col': 1, 'commentstring': '" %s' })
@@ -649,6 +670,9 @@ let s:null_comment_string    = '%s'
 "                              (default), strip from empty lines only, 
 "                              if 2, always strip whitespace; if 0, 
 "                              don't strip any whitespace
+"         postprocess_uncomment .. Run a |printf()| expression with 2 
+"                              placeholders on uncommented lines, e.g. 
+"                              'norm! %sgg=%sgg'.
 "   2. 1-2 values for: ?commentPrefix, ?commentPostfix
 "   3. a dictionary (internal use only)
 "
@@ -797,7 +821,9 @@ function! tcomment#Comment(beg, end, ...)
     endif
     " TLogVAR comment_anyway, comment_mode, mode_extra, comment_do
     " " echom "DBG" string(s:cdef)
-    " let cbeg = get(s:cdef, 'col', cbeg)
+    if comment_do ==# 'c'
+        let cbeg = get(s:cdef, 'col', cbeg)
+    endif
     " TLogVAR cbeg
     " go
     " TLogVAR comment_mode
@@ -845,9 +871,11 @@ function! tcomment#Comment(beg, end, ...)
                 " TLogVAR part1, ok
                 if ok
                     let line1 = lmatch[1] . part1 . lmatch[4]
-                    if comment_do ==# 'u' && g:tcomment#rstrip_on_uncomment > 0
+                    if comment_do ==# 'u'
+                        if g:tcomment#rstrip_on_uncomment > 0
                         if g:tcomment#rstrip_on_uncomment == 2 || line1 !~ '\S'
                             let line1 = substitute(line1, '\s\+$', '', '')
+                        endif
                         endif
                     endif
                     " TLogVAR line1
@@ -855,6 +883,12 @@ function! tcomment#Comment(beg, end, ...)
                 endif
             endif
         endfor
+        if comment_do ==# 'u'
+            let postprocess_uncomment = get(cdef, 'postprocess_uncomment', '')
+            if !empty(postprocess_uncomment)
+                exec printf(postprocess_uncomment, lbeg, lend)
+            endif
+        endif
     endif
     " reposition cursor
     " TLogVAR 3, comment_mode
@@ -1800,7 +1834,6 @@ endf
 " s:GuessFileType(beg, end, comment_mode, filetype, ?fallbackFiletype)
 function! s:GuessFileType(beg, end, comment_mode, filetype, ...)
     " TLogVAR a:beg, a:end, a:comment_mode, a:filetype, a:000
-    " TLogVAR cdef
     let cdef0 = s:GuessCustomCommentString(a:filetype, a:comment_mode)
     if a:0 >= 1 && a:1 != ''
         let cdef = s:GuessCustomCommentString(a:1, a:comment_mode)
@@ -1832,10 +1865,12 @@ function! s:GuessFileType(beg, end, comment_mode, filetype, ...)
     let n  = beg
     " TLogVAR n, beg, end
     while n <= end
-        let m  = indent(n) + 1
         let text = getline(n)
-        let le = len(text)
-        " TLogVAR m, le
+        let indentstring = matchstr(text, '^\s*')
+        let m = strwidth(indentstring)
+        " let m  = indent(n) + 1
+        let le = strwidth(text)
+        " TLogVAR n, m, le
         while m <= le
             let syntax_name = s:GetSyntaxName(n, m)
             " TLogVAR syntax_name, n, m
